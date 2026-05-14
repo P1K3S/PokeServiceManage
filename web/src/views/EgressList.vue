@@ -32,8 +32,8 @@
       </el-form>
 
       <el-table :data="list" stripe border v-loading="loading">
-        <el-table-column prop="proxyName" label="代理名称" min-width="180" align="center" show-overflow-tooltip />
-        <el-table-column label="所属服务" min-width="160" align="center" show-overflow-tooltip>
+        <el-table-column prop="proxyName" label="代理名称" min-width="220" align="center" show-overflow-tooltip />
+        <el-table-column label="所属服务" min-width="200" align="center" show-overflow-tooltip>
           <template #default="{ row }">
             {{ row.serviceName ? row.serviceName + '-' + row.machineName : '-' }}
           </template>
