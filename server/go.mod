@@ -5,6 +5,7 @@ go 1.21
 require (
 	github.com/gin-contrib/cors v1.5.0
 	github.com/gin-gonic/gin v1.9.1
+	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/spf13/viper v1.18.1
 	go.uber.org/zap v1.26.0
 	golang.org/x/crypto v0.16.0

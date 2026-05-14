@@ -2,6 +2,7 @@ package model
 
 type Machine struct {
 	BaseModel
+	UserID      uint   `gorm:"not null;index" json:"userId"`
 	Name        string `gorm:"size:64;uniqueIndex;not null" json:"name"`
 	IP          string `gorm:"size:45;not null" json:"ip"`
 	MachineType string `gorm:"size:16;not null" json:"machineType"`

@@ -73,7 +73,7 @@
           </template>
         </el-table-column>
         <el-table-column prop="serviceCount" label="服务数" width="70" align="center" />
-        <el-table-column label="操作" width="220" align="center">
+        <el-table-column label="操作" width="220" fixed="right" align="center">
           <template #default="{ row }">
             <el-button type="info" link size="small" @click="viewDetail(row)">查看</el-button>
             <el-button type="primary" link size="small" @click="openForm('edit', row)">编辑</el-button>
@@ -289,6 +289,10 @@ const handleDiscoverServices = async (row) => {
 }
 
 const handleCheckAllSSH = async () => {
+  if (!list.value || list.value.length === 0) {
+    ElMessage.warning('暂无主机，请先新增')
+    return
+  }
   allSshChecking.value = true
   let online = 0
   let offline = 0
@@ -313,6 +317,10 @@ const handleCheckAllSSH = async () => {
 }
 
 const handleDiscoverAllServices = async () => {
+  if (!list.value || list.value.length === 0) {
+    ElMessage.warning('暂无主机，请先新增')
+    return
+  }
   allDiscovering.value = true
   let total = 0
   for (const m of list.value) {

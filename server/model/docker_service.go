@@ -2,6 +2,7 @@ package model
 
 type DockerService struct {
 	BaseModel
+	UserID        uint   `gorm:"not null;index" json:"userId"`
 	MachineID        uint   `gorm:"not null;index" json:"machineId"`
 	Name             string `gorm:"size:64;not null" json:"name"`
 	Port             int    `gorm:"not null" json:"port"`
@@ -12,6 +13,7 @@ type DockerService struct {
 	Status           int8   `gorm:"default:1" json:"status"`
 	Locked           bool   `gorm:"default:false" json:"locked"`
 	IsEgress         bool   `gorm:"default:false" json:"isEgress"`
+	IsPublic         bool   `gorm:"default:false" json:"isPublic"`
 	Remark           string `gorm:"type:text" json:"remark"`
 }
 

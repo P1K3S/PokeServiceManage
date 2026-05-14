@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"service-manage/config"
 	"service-manage/model"
 	sshutil "service-manage/utils/ssh"
 
@@ -29,7 +30,7 @@ func (h *EgressMethodHandler) List(c *gin.Context) {
 	isDirectStr := c.Query("isDirect")
 	statusStr := c.Query("status")
 
-	query := h.DB.Model(&model.EgressMethod{})
+	query := userScope(c, h.DB).Model(&model.EgressMethod{})
 
 	if serviceIDStr != "" {
 		serviceID, _ := strconv.Atoi(serviceIDStr)
@@ -119,6 +120,14 @@ func (h *EgressMethodHandler) Create(c *gin.Context) {
 		return
 	}
 
+	method.UserID = getUserId(c)
+
+	var dup model.EgressMethod
+	if err := h.DB.Where("public_ip = ? AND public_port = ?", method.PublicIP, method.PublicPort).First(&dup).Error; err == nil {
+		jsonError(c, fmt.Sprintf("公网地址 %s:%d 已存在，端口不可重复", method.PublicIP, method.PublicPort))
+		return
+	}
+
 	var serviceMachineID uint
 	if method.ServiceType == "other" {
 		var otherService model.OtherService
@@ -167,7 +176,7 @@ func (h *EgressMethodHandler) Create(c *gin.Context) {
 func (h *EgressMethodHandler) Update(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	var method model.EgressMethod
-	if err := h.DB.First(&method, id).Error; err != nil {
+	if err := userScope(c, h.DB).First(&method, id).Error; err != nil {
 		jsonError(c, "出站方式不存在")
 		return
 	}
@@ -179,6 +188,37 @@ func (h *EgressMethodHandler) Update(c *gin.Context) {
 	}
 
 	updates = convertKeys(updates)
+
+	newIP, ipOk := updates["public_ip"].(string)
+	newPort, portOk := updates["public_port"]
+	if !ipOk {
+		newIP = method.PublicIP
+	}
+	if !portOk {
+		switch v := newPort.(type) {
+		case float64:
+			newPort = int(v)
+		default:
+			newPort = method.PublicPort
+		}
+	} else {
+		switch v := newPort.(type) {
+		case float64:
+			newPort = int(v)
+		}
+	}
+	finalIP := newIP
+	finalPort, _ := newPort.(int)
+	if finalPort == 0 {
+		finalPort = method.PublicPort
+	}
+
+	var dup model.EgressMethod
+	if err := h.DB.Where("public_ip = ? AND public_port = ? AND id != ?", finalIP, finalPort, method.ID).First(&dup).Error; err == nil {
+		jsonError(c, fmt.Sprintf("公网地址 %s:%d 已存在，端口不可重复", finalIP, finalPort))
+		return
+	}
+
 	if err := h.DB.Model(&method).Updates(updates).Error; err != nil {
 		jsonError(c, "更新出站方式失败")
 		return
@@ -189,7 +229,7 @@ func (h *EgressMethodHandler) Update(c *gin.Context) {
 func (h *EgressMethodHandler) Delete(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	var method model.EgressMethod
-	if err := h.DB.First(&method, id).Error; err != nil {
+	if err := userScope(c, h.DB).First(&method, id).Error; err != nil {
 		jsonError(c, "出站方式不存在")
 		return
 	}
@@ -246,12 +286,49 @@ func isProtectedPort(port int) bool {
 	return port == 22 || (port >= 62500 && port <= 62501)
 }
 
+func (h *EgressMethodHandler) resolveMachineID(m model.EgressMethod) uint {
+	if m.IsDirect {
+		if m.ServiceType == "other" {
+			var os model.OtherService
+			if err := h.DB.First(&os, m.ServiceID).Error; err != nil {
+				return 0
+			}
+			return os.MachineID
+		}
+		var ds model.DockerService
+		if err := h.DB.First(&ds, m.ServiceID).Error; err != nil {
+			return 0
+		}
+		return ds.MachineID
+	}
+	if m.EgressServiceID == 0 {
+		return 0
+	}
+	var ds model.DockerService
+	if err := h.DB.First(&ds, m.EgressServiceID).Error; err != nil {
+		return 0
+	}
+	return ds.MachineID
+}
+
 func (h *EgressMethodHandler) SyncFirewall(c *gin.Context) {
 	var methods []model.EgressMethod
-	if err := h.DB.Find(&methods).Error; err != nil {
+	if err := userScope(c, h.DB).Find(&methods).Error; err != nil {
 		jsonError(c, "查询出站方式失败")
 		return
 	}
+
+	if !isAdmin(c) {
+		for _, m := range methods {
+			if m.PublicPort < 9701 || m.PublicPort > 9799 {
+				jsonError(c, "普通用户仅可使用 9701-9799 端口范围，当前存在超出范围的端口，无法同步")
+				return
+			}
+		}
+	}
+
+	var allMethods []model.EgressMethod
+	h.DB.Find(&allMethods)
 
 	type machineAction struct {
 		machine    model.Machine
@@ -259,35 +336,38 @@ func (h *EgressMethodHandler) SyncFirewall(c *gin.Context) {
 		denyPorts  map[int]bool
 	}
 	machineMap := make(map[uint]*machineAction)
+	globalAllowMap := make(map[uint]map[int]bool)
+
+	addPortsToMap := func(targetMap map[uint]map[int]bool, machineID uint, port int) {
+		if targetMap[machineID] == nil {
+			targetMap[machineID] = make(map[int]bool)
+		}
+		targetMap[machineID][port] = true
+	}
+
+	for _, m := range allMethods {
+		if m.PublicPort <= 0 {
+			continue
+		}
+		if m.Status != 1 {
+			continue
+		}
+		var machineID uint
+		machineID = h.resolveMachineID(m)
+		if machineID == 0 {
+			continue
+		}
+		addPortsToMap(globalAllowMap, machineID, m.PublicPort)
+	}
 
 	for _, m := range methods {
 		if m.PublicPort <= 0 {
 			continue
 		}
 		var machineID uint
-		if m.IsDirect {
-			if m.ServiceType == "other" {
-				var os model.OtherService
-				if err := h.DB.First(&os, m.ServiceID).Error; err != nil {
-					continue
-				}
-				machineID = os.MachineID
-			} else {
-				var ds model.DockerService
-				if err := h.DB.First(&ds, m.ServiceID).Error; err != nil {
-					continue
-				}
-				machineID = ds.MachineID
-			}
-		} else {
-			if m.EgressServiceID == 0 {
-				continue
-			}
-			var ds model.DockerService
-			if err := h.DB.First(&ds, m.EgressServiceID).Error; err != nil {
-				continue
-			}
-			machineID = ds.MachineID
+		machineID = h.resolveMachineID(m)
+		if machineID == 0 {
+			continue
 		}
 
 		if _, exists := machineMap[machineID]; !exists {
@@ -363,13 +443,19 @@ func (h *EgressMethodHandler) SyncFirewall(c *gin.Context) {
 		}
 
 		var cmds []string
+		var deleteCmds []string
 		deleteCount := 0
 		skipCount := 0
 		var skippedPorts []int
 		existingAllow := make(map[int]bool)
 		existingDeny := make(map[int]bool)
 
-		sort.Slice(rules, func(i, j int) bool { return rules[i].num < rules[j].num })
+		sort.Slice(rules, func(i, j int) bool { return rules[i].num > rules[j].num })
+
+		globalPorts := globalAllowMap[machine.ID]
+		if globalPorts == nil {
+			globalPorts = make(map[int]bool)
+		}
 
 		for _, rule := range rules {
 			ports := parsePortsFromSpec(rule.portSpec)
@@ -388,43 +474,43 @@ func (h *EgressMethodHandler) SyncFirewall(c *gin.Context) {
 				continue
 			}
 
-			allMatch := true
-			desiredAction := ""
+			allGlobal := true
 			for _, p := range ports {
-				need := ""
-				if ma.allowPorts[p] {
-					need = "ALLOW"
-				} else if ma.denyPorts[p] {
-					need = "DENY"
-				}
-				if need == "" {
-					allMatch = false
-					break
-				}
-				if desiredAction == "" {
-					desiredAction = need
-				} else if desiredAction != need {
-					allMatch = false
+				if !globalPorts[p] {
+					allGlobal = false
 					break
 				}
 			}
-
-			if allMatch && rule.action == desiredAction {
+			if allGlobal && rule.action == "ALLOW" {
 				for _, p := range ports {
-					if rule.action == "ALLOW" {
-						existingAllow[p] = true
-					} else {
-						existingDeny[p] = true
-					}
+					existingAllow[p] = true
 					skippedPorts = append(skippedPorts, p)
 				}
 				skipCount++
 				continue
 			}
 
-			cmds = append(cmds, fmt.Sprintf("ufw --force delete %d", rule.num))
+			allMyDeny := true
+			for _, p := range ports {
+				if !ma.denyPorts[p] {
+					allMyDeny = false
+					break
+				}
+			}
+			if allMyDeny && rule.action == "DENY" {
+				for _, p := range ports {
+					existingDeny[p] = true
+					skippedPorts = append(skippedPorts, p)
+				}
+				skipCount++
+				continue
+			}
+
+			deleteCmds = append(deleteCmds, fmt.Sprintf("ufw --force delete %d", rule.num))
 			deleteCount++
 		}
+
+		cmds = append(cmds, deleteCmds...)
 
 		for p := range ma.allowPorts {
 			if !existingAllow[p] {
@@ -506,7 +592,7 @@ func (h *EgressMethodHandler) GenerateFrpc(c *gin.Context) {
 	}
 
 	var methods []model.EgressMethod
-	if err := h.DB.Where("id IN ?", req.IDs).Find(&methods).Error; err != nil || len(methods) == 0 {
+	if err := userScope(c, h.DB).Where("id IN ?", req.IDs).Find(&methods).Error; err != nil || len(methods) == 0 {
 		jsonError(c, "出站方式不存在")
 		return
 	}
@@ -526,7 +612,7 @@ func (h *EgressMethodHandler) GenerateFrpc(c *gin.Context) {
 	}
 
 	var egressService model.DockerService
-	if err := h.DB.First(&egressService, egressServiceID).Error; err != nil {
+	if err := serviceScope(c, h.DB).First(&egressService, egressServiceID).Error; err != nil {
 		jsonError(c, "出站服务不存在")
 		return
 	}
@@ -539,20 +625,20 @@ func (h *EgressMethodHandler) GenerateFrpc(c *gin.Context) {
 
 	var lines []string
 	lines = append(lines, fmt.Sprintf(`serverAddr = "%s"`, egressMachine.IP))
-	lines = append(lines, "serverPort = 62500")
-	lines = append(lines, `auth.token = "shiwan233"`)
+	lines = append(lines, fmt.Sprintf("serverPort = %d", config.AppConfig.Frp.ServerPort))
+	lines = append(lines, fmt.Sprintf(`auth.token = "%s"`, config.AppConfig.Frp.AuthToken))
 	lines = append(lines, "")
 
 	for _, m := range methods {
 		var serviceName string
 		if m.ServiceType == "other" {
 			var os model.OtherService
-			if err := h.DB.First(&os, m.ServiceID).Error; err == nil {
+			if err := serviceScope(c, h.DB).First(&os, m.ServiceID).Error; err == nil {
 				serviceName = os.Name
 			}
 		} else {
 			var ds model.DockerService
-			if err := h.DB.First(&ds, m.ServiceID).Error; err == nil {
+			if err := serviceScope(c, h.DB).First(&ds, m.ServiceID).Error; err == nil {
 				serviceName = ds.Name
 			}
 		}
@@ -579,9 +665,9 @@ func (h *EgressMethodHandler) GenerateFrpc(c *gin.Context) {
 		lines = append(lines, "")
 	}
 
-	config := strings.Join(lines, "\n")
+	result := strings.Join(lines, "\n")
 
 	jsonSuccess(c, gin.H{
-		"config": config,
+		"config": result,
 	})
 }

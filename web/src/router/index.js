@@ -1,7 +1,19 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
 const routes = [
-  { path: '/', redirect: '/dashboard' },
+  {
+    path: '/login',
+    name: 'Login',
+    component: () => import('../views/Login.vue'),
+    meta: { title: '登录', public: true }
+  },
+  {
+    path: '/register',
+    name: 'Register',
+    component: () => import('../views/Register.vue'),
+    meta: { title: '注册', public: true }
+  }, {
+    path: '/', redirect: '/dashboard' },
   {
     path: '/dashboard',
     name: 'Dashboard',
@@ -43,6 +55,19 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes
+})
+
+router.beforeEach((to, from, next) => {
+  if (to.meta.public) {
+    next()
+    return
+  }
+  const token = localStorage.getItem('token')
+  if (!token) {
+    next('/login')
+  } else {
+    next()
+  }
 })
 
 export default router

@@ -57,7 +57,7 @@
         </el-table-column>
         <el-table-column prop="egressCount" label="出站" width="65" align="center" />
         <el-table-column prop="remark" label="备注" min-width="140" show-overflow-tooltip align="center" />
-        <el-table-column label="操作" width="220" align="center">
+        <el-table-column label="操作" width="220" fixed="right" align="center">
           <template #default="{ row }">
             <el-button type="info" link size="small" @click="viewDetail(row)">查看</el-button>
             <el-button type="primary" link size="small" @click="openForm('edit', row)">编辑</el-button>
@@ -136,6 +136,9 @@
         <el-form-item label="出站服务">
           <el-switch v-model="form.isEgress" active-text="是" inactive-text="否" />
         </el-form-item>
+        <el-form-item v-if="authStore.isAdmin" label="公共服务">
+          <el-switch v-model="form.isPublic" active-text="是" inactive-text="否" />
+        </el-form-item>
         <el-form-item label="备注">
           <el-input v-model="form.remark" type="textarea" :rows="2" />
         </el-form-item>
@@ -187,6 +190,9 @@ import { getServices, createService, updateService, deleteService, checkService 
 import { getMachines } from '../api/machine'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Delete } from '@element-plus/icons-vue'
+import { useAuthStore } from '../stores/auth'
+
+const authStore = useAuthStore()
 
 const list = ref([])
 const total = ref(0)
@@ -209,7 +215,7 @@ const portPairs = ref([])
 
 const form = reactive({
   machineId: null, name: '', port: 80, protocol: 'TCP',
-  dockerSourceIp: '', dockerSourcePort: null, status: 1, isEgress: false, remark: ''
+  dockerSourceIp: '', dockerSourcePort: null, status: 1, isEgress: false, isPublic: false, remark: ''
 })
 
 const rules = {
@@ -247,7 +253,7 @@ const openForm = (mode, row) => {
       machineId: row.machineId, name: row.name,
       port: row.port, protocol: row.protocol || 'TCP',
       dockerSourceIp: row.dockerSourceIp || '', dockerSourcePort: row.dockerSourcePort || null,
-      status: row.status, isEgress: row.isEgress || false, remark: row.remark || ''
+      status: row.status, isEgress: row.isEgress || false, isPublic: !!row.isPublic, remark: row.remark || ''
     })
     if (row.portMappings) {
       try {
@@ -263,7 +269,7 @@ const openForm = (mode, row) => {
     }
   } else {
     editId.value = null
-    Object.assign(form, { machineId: null, name: '', port: 80, protocol: 'TCP', dockerSourceIp: '', dockerSourcePort: null, status: 1, isEgress: false, remark: '' })
+    Object.assign(form, { machineId: null, name: '', port: 80, protocol: 'TCP', dockerSourceIp: '', dockerSourcePort: null, status: 1, isEgress: false, isPublic: false, remark: '' })
   }
 }
 
@@ -343,7 +349,7 @@ const handleToggleLock = async (row, val) => {
 }
 
 const handleCheckAllStatus = async () => {
-  if (list.value.length === 0) {
+  if (!list.value || list.value.length === 0) {
     ElMessage.info('没有Docker服务需要检测')
     return
   }

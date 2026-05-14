@@ -6,6 +6,7 @@ type Config struct {
 	Server   ServerConfig
 	Database DatabaseConfig
 	Log      LogConfig
+	Frp      FrpConfig
 }
 
 type ServerConfig struct {
@@ -30,6 +31,11 @@ type LogConfig struct {
 	MaxSize    int
 	MaxBackups int
 	MaxAge     int
+}
+
+type FrpConfig struct {
+	ServerPort int    `mapstructure:"server_port"`
+	AuthToken  string `mapstructure:"auth_token"`
 }
 
 var AppConfig *Config

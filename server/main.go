@@ -9,6 +9,7 @@ import (
 	"service-manage/model"
 	"service-manage/router"
 
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -44,6 +45,7 @@ func main() {
 	sqlDB.SetMaxOpenConns(cfg.Database.MaxOpenConns)
 
 	if err := db.AutoMigrate(
+		&model.User{},
 		&model.Machine{},
 		&model.DockerService{},
 		&model.OtherService{},
@@ -53,6 +55,8 @@ func main() {
 	}
 
 	cleanupDatabase(db)
+	seedAdminUser(db)
+	backfillExistingData(db)
 
 	logger.Log.Info("数据库表初始化完成")
 
@@ -84,5 +88,32 @@ func dropForeignKeyIfExists(db *gorm.DB, table, fkName string) {
 	).Scan(&count)
 	if count > 0 {
 		db.Exec(fmt.Sprintf("ALTER TABLE %s DROP FOREIGN KEY %s", table, fkName))
+	}
+}
+
+func seedAdminUser(db *gorm.DB) {
+	var count int64
+	db.Model(&model.User{}).Where("username = ?", "poke").Count(&count)
+	if count == 0 {
+		hash, _ := bcrypt.GenerateFromPassword([]byte("shiwan233"), bcrypt.DefaultCost)
+		db.Create(&model.User{
+			Username: "poke",
+			Password: string(hash),
+			Role:     model.RoleSuperAdmin,
+			Status:   1,
+		})
+		logger.Log.Info("默认超级管理员账号已创建: poke / shiwan233")
+	}
+}
+
+func backfillExistingData(db *gorm.DB) {
+	var admin model.User
+	if err := db.Where("username = ?", "poke").First(&admin).Error; err != nil {
+		return
+	}
+
+	tables := []string{"machines", "docker_services", "other_services", "egress_methods"}
+	for _, table := range tables {
+		db.Exec(fmt.Sprintf("UPDATE %s SET user_id = ? WHERE user_id = 0 OR user_id IS NULL", table), admin.ID)
 	}
 }

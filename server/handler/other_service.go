@@ -24,7 +24,7 @@ func (h *OtherServiceHandler) List(c *gin.Context) {
 	machineIDStr := c.Query("machineId")
 	statusStr := c.Query("status")
 
-	query := h.DB.Model(&model.OtherService{})
+	query := serviceScope(c, h.DB).Model(&model.OtherService{})
 
 	if keyword != "" {
 		query = query.Where("other_services.name LIKE ?", "%"+keyword+"%")
@@ -84,6 +84,8 @@ func (h *OtherServiceHandler) Create(c *gin.Context) {
 		return
 	}
 
+	service.UserID = getUserId(c)
+
 	var machine model.Machine
 	if err := h.DB.First(&machine, service.MachineID).Error; err != nil {
 		jsonError(c, "所属主机不存在")
@@ -100,7 +102,7 @@ func (h *OtherServiceHandler) Create(c *gin.Context) {
 func (h *OtherServiceHandler) Update(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	var service model.OtherService
-	if err := h.DB.First(&service, id).Error; err != nil {
+	if err := userScope(c, h.DB).First(&service, id).Error; err != nil {
 		jsonError(c, "其他服务不存在")
 		return
 	}
@@ -122,7 +124,7 @@ func (h *OtherServiceHandler) Update(c *gin.Context) {
 func (h *OtherServiceHandler) Delete(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	var service model.OtherService
-	if err := h.DB.First(&service, id).Error; err != nil {
+	if err := userScope(c, h.DB).First(&service, id).Error; err != nil {
 		jsonError(c, "其他服务不存在")
 		return
 	}

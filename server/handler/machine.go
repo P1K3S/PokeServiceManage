@@ -33,7 +33,7 @@ func (h *MachineHandler) List(c *gin.Context) {
 	machineType := c.Query("machineType")
 	statusStr := c.Query("status")
 
-	query := h.DB.Model(&model.Machine{})
+	query := userScope(c, h.DB).Model(&model.Machine{})
 
 	if keyword != "" {
 		query = query.Where("name LIKE ?", "%"+keyword+"%")
@@ -81,7 +81,7 @@ func (h *MachineHandler) List(c *gin.Context) {
 func (h *MachineHandler) Get(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	var machine model.Machine
-	if err := h.DB.First(&machine, id).Error; err != nil {
+	if err := userScope(c, h.DB).First(&machine, id).Error; err != nil {
 		jsonError(c, "主机不存在")
 		return
 	}
@@ -95,6 +95,8 @@ func (h *MachineHandler) Create(c *gin.Context) {
 		jsonError(c, "请求参数错误")
 		return
 	}
+
+	machine.UserID = getUserId(c)
 
 	if machine.SSHPort == 0 {
 		machine.SSHPort = 22
@@ -125,7 +127,7 @@ func (h *MachineHandler) Create(c *gin.Context) {
 func (h *MachineHandler) Update(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	var machine model.Machine
-	if err := h.DB.First(&machine, id).Error; err != nil {
+	if err := userScope(c, h.DB).First(&machine, id).Error; err != nil {
 		jsonError(c, "主机不存在")
 		return
 	}
@@ -206,7 +208,7 @@ func (h *MachineHandler) syncEgressMethodIP(machineID uint, oldIP, newIP string)
 func (h *MachineHandler) Delete(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	var machine model.Machine
-	if err := h.DB.First(&machine, id).Error; err != nil {
+	if err := userScope(c, h.DB).First(&machine, id).Error; err != nil {
 		jsonError(c, "主机不存在")
 		return
 	}
@@ -256,19 +258,19 @@ func (h *MachineHandler) Overview(c *gin.Context) {
 	var machineTotal, serviceTotal int64
 	var machineOnline, serviceRunning int64
 
-	h.DB.Model(&model.Machine{}).Count(&machineTotal)
-	h.DB.Model(&model.Machine{}).Where("status = 1").Count(&machineOnline)
+	userScope(c, h.DB).Model(&model.Machine{}).Count(&machineTotal)
+	userScope(c, h.DB).Model(&model.Machine{}).Where("status = 1").Count(&machineOnline)
 	var dockerTotal, otherTotal int64
-	h.DB.Model(&model.DockerService{}).Count(&dockerTotal)
-	h.DB.Model(&model.OtherService{}).Count(&otherTotal)
+	userScope(c, h.DB).Model(&model.DockerService{}).Count(&dockerTotal)
+	userScope(c, h.DB).Model(&model.OtherService{}).Count(&otherTotal)
 	serviceTotal = dockerTotal + otherTotal
 	var dockerRunning, otherRunning int64
-	h.DB.Model(&model.DockerService{}).Where("status = 1").Count(&dockerRunning)
-	h.DB.Model(&model.OtherService{}).Where("status = 1").Count(&otherRunning)
+	userScope(c, h.DB).Model(&model.DockerService{}).Where("status = 1").Count(&dockerRunning)
+	userScope(c, h.DB).Model(&model.OtherService{}).Where("status = 1").Count(&otherRunning)
 	serviceRunning = dockerRunning + otherRunning
 
 	var recentMachines []model.Machine
-	h.DB.Model(&model.Machine{}).Order("id DESC").Limit(5).Find(&recentMachines)
+	userScope(c, h.DB).Model(&model.Machine{}).Order("id DESC").Limit(5).Find(&recentMachines)
 
 	type MachineVO struct {
 		model.Machine
@@ -279,8 +281,8 @@ func (h *MachineHandler) Overview(c *gin.Context) {
 		clearMachinePassword(&m)
 		var count int64
 		var dockerCount, otherCount int64
-		h.DB.Model(&model.DockerService{}).Where("machine_id = ?", m.ID).Count(&dockerCount)
-		h.DB.Model(&model.OtherService{}).Where("machine_id = ?", m.ID).Count(&otherCount)
+		userScope(c, h.DB).Model(&model.DockerService{}).Where("machine_id = ?", m.ID).Count(&dockerCount)
+		userScope(c, h.DB).Model(&model.OtherService{}).Where("machine_id = ?", m.ID).Count(&otherCount)
 		count = dockerCount + otherCount
 		recentMachineVOs = append(recentMachineVOs, MachineVO{
 			Machine:      m,
@@ -300,7 +302,7 @@ func (h *MachineHandler) Overview(c *gin.Context) {
 func (h *MachineHandler) CheckSSH(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	var machine model.Machine
-	if err := h.DB.First(&machine, id).Error; err != nil {
+	if err := userScope(c, h.DB).First(&machine, id).Error; err != nil {
 		jsonError(c, "主机不存在")
 		return
 	}

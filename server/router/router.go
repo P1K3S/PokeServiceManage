@@ -1,8 +1,12 @@
 package router
 
 import (
+	"net/http"
+	"os"
+	"path/filepath"
 	"service-manage/handler"
 	"service-manage/middleware"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -12,8 +16,15 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 	r := gin.Default()
 	r.Use(middleware.CORS())
 
+	authHandler := handler.NewAuthHandler(db)
+	r.POST("/api/login", authHandler.Login)
+	r.POST("/api/register", authHandler.Register)
+
 	api := r.Group("/api")
+	api.Use(middleware.Auth())
 	{
+		api.GET("/user-info", authHandler.GetUserInfo)
+
 		overviewHandler := handler.NewMachineHandler(db)
 		api.GET("/overview", overviewHandler.Overview)
 
@@ -58,6 +69,30 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 			egress.POST("/sync-firewall", egressHandler.SyncFirewall)
 			egress.POST("/generate-frpc", egressHandler.GenerateFrpc)
 		}
+	}
+
+	distPath := "dist"
+	if _, err := os.Stat(distPath); err == nil {
+		r.NoRoute(func(c *gin.Context) {
+			if strings.HasPrefix(c.Request.URL.Path, "/api") {
+				c.JSON(http.StatusNotFound, gin.H{"code": 404, "message": "接口不存在"})
+				return
+			}
+			c.File(filepath.Join(distPath, "index.html"))
+		})
+
+		r.Use(func(c *gin.Context) {
+			if strings.HasPrefix(c.Request.URL.Path, "/api") {
+				c.Next()
+				return
+			}
+			filePath := filepath.Join(distPath, c.Request.URL.Path)
+			if s, err := os.Stat(filePath); err == nil && !s.IsDir() {
+				c.File(filePath)
+				return
+			}
+			c.File(filepath.Join(distPath, "index.html"))
+		})
 	}
 
 	return r

@@ -18,3 +18,7 @@ log:
   max_size: 100
   max_backups: 7
   max_age: 30
+
+frp:
+  server_port: 62500
+  auth_token: "shiwan233"

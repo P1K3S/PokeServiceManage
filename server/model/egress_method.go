@@ -2,6 +2,7 @@ package model
 
 type EgressMethod struct {
 	BaseModel
+	UserID       uint   `gorm:"not null;index" json:"userId"`
 	ServiceID       uint   `gorm:"not null;index" json:"serviceId"`
 	ServiceType     string `gorm:"size:16;not null;default:'docker'" json:"serviceType"`
 	EgressServiceID uint   `gorm:"index;default:0" json:"egressServiceId"`

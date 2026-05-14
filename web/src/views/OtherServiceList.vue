@@ -43,7 +43,7 @@
         </el-table-column>
         <el-table-column prop="egressCount" label="出站" width="65" align="center" />
         <el-table-column prop="remark" label="备注" min-width="160" show-overflow-tooltip align="center" />
-        <el-table-column label="操作" width="220" align="center">
+        <el-table-column label="操作" width="220" fixed="right" align="center">
           <template #default="{ row }">
             <el-button type="info" link size="small" @click="viewDetail(row)">查看</el-button>
             <el-button type="primary" link size="small" @click="openForm('edit', row)">编辑</el-button>
@@ -85,6 +85,9 @@
         <el-form-item label="状态">
           <el-switch v-model="form.status" :active-value="1" :inactive-value="0" active-text="运行中" inactive-text="已停止" />
         </el-form-item>
+        <el-form-item v-if="authStore.isAdmin" label="公共服务">
+          <el-switch v-model="form.isPublic" active-text="是" inactive-text="否" />
+        </el-form-item>
         <el-form-item label="备注">
           <el-input v-model="form.remark" type="textarea" :rows="2" />
         </el-form-item>
@@ -124,6 +127,9 @@ import { reactive, ref, onMounted } from 'vue'
 import { getOtherServices, createOtherService, updateOtherService, deleteOtherService } from '../api/otherService'
 import { getMachines } from '../api/machine'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useAuthStore } from '../stores/auth'
+
+const authStore = useAuthStore()
 
 const list = ref([])
 const total = ref(0)
@@ -142,7 +148,7 @@ const detailVisible = ref(false)
 const detailData = ref(null)
 
 const form = reactive({
-  machineId: null, name: '', port: 80, protocol: 'TCP', status: 1, remark: ''
+  machineId: null, name: '', port: 80, protocol: 'TCP', status: 1, isPublic: false, remark: ''
 })
 
 const rules = {
@@ -178,11 +184,11 @@ const openForm = (mode, row) => {
     Object.assign(form, {
       machineId: row.machineId, name: row.name,
       port: row.port, protocol: row.protocol || 'TCP',
-      status: row.status, remark: row.remark || ''
+      status: row.status, isPublic: !!row.isPublic, remark: row.remark || ''
     })
   } else {
     editId.value = null
-    Object.assign(form, { machineId: null, name: '', port: 80, protocol: 'TCP', status: 1, remark: '' })
+    Object.assign(form, { machineId: null, name: '', port: 80, protocol: 'TCP', status: 1, isPublic: false, remark: '' })
   }
 }
 
