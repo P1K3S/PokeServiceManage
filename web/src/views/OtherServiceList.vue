@@ -31,6 +31,7 @@
       <el-table :data="list" stripe border v-loading="loading" style="width: 100%">
         <el-table-column prop="name" label="服务名称" min-width="140" show-overflow-tooltip align="center" />
         <el-table-column prop="machineName" label="所属主机" width="140" show-overflow-tooltip align="center" />
+        <el-table-column prop="machineIp" label="主机IP" width="150" align="center" />
         <el-table-column prop="port" label="端口" width="100" align="center" />
         <el-table-column prop="protocol" label="协议" width="70" align="center" />
         <el-table-column label="状态" width="80" align="center">
