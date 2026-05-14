@@ -52,6 +52,10 @@ func main() {
 		logger.Log.Sugar().Fatalf("自动建表失败: %v", err)
 	}
 
+	if db.Migrator().HasColumn(&model.EgressMethod{}, "method_type") {
+		db.Migrator().DropColumn(&model.EgressMethod{}, "method_type")
+	}
+
 	logger.Log.Info("数据库表初始化完成")
 
 	r := router.SetupRouter(db)
