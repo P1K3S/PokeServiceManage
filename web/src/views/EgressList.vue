@@ -349,12 +349,38 @@ const handleDelete = (row) => {
 }
 
 const copyAddress = (row) => {
-  const addr = `${row.protocol.toLowerCase()}://${row.publicIp}:${row.publicPort}`
-  navigator.clipboard.writeText(addr).then(() => {
-    ElMessage.success(`已复制: ${addr}`)
-  }).catch(() => {
+  const proto = (row.protocol || '').toUpperCase()
+  let addr
+  if (proto === 'HTTP' || proto === 'HTTPS') {
+    addr = `${proto.toLowerCase()}://${row.publicIp}:${row.publicPort}`
+  } else {
+    addr = `${row.publicIp}:${row.publicPort}`
+  }
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(addr).then(() => {
+      ElMessage.success(`已复制: ${addr}`)
+    }).catch(() => {
+      fallbackCopy(addr)
+    })
+  } else {
+    fallbackCopy(addr)
+  }
+}
+
+const fallbackCopy = (text) => {
+  const textarea = document.createElement('textarea')
+  textarea.value = text
+  textarea.style.position = 'fixed'
+  textarea.style.left = '-9999px'
+  document.body.appendChild(textarea)
+  textarea.select()
+  try {
+    document.execCommand('copy')
+    ElMessage.success(`已复制: ${text}`)
+  } catch {
     ElMessage.warning('复制失败，请手动复制')
-  })
+  }
+  document.body.removeChild(textarea)
 }
 
 onMounted(() => {
