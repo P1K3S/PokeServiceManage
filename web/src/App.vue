@@ -29,6 +29,10 @@
           <el-icon><Connection /></el-icon>
           <span>出站方式管理</span>
         </el-menu-item>
+        <el-menu-item index="/frpc-config">
+          <el-icon><Link /></el-icon>
+          <span>内网穿透配置</span>
+        </el-menu-item>
       </el-menu>
     </el-aside>
     <el-container>
@@ -44,7 +48,7 @@
 
 <script setup>
 import { useRoute } from 'vue-router'
-import { DataAnalysis, Monitor, Setting, Grid, Connection } from '@element-plus/icons-vue'
+import { DataAnalysis, Monitor, Setting, Grid, Connection, Link } from '@element-plus/icons-vue'
 
 const route = useRoute()
 </script>

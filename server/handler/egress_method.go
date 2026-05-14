@@ -1,9 +1,14 @@
 package handler
 
 import (
+	"fmt"
+	"regexp"
+	"sort"
 	"strconv"
+	"strings"
 
 	"service-manage/model"
+	sshutil "service-manage/utils/ssh"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -194,4 +199,389 @@ func (h *EgressMethodHandler) Delete(c *gin.Context) {
 		return
 	}
 	jsonSuccess(c, nil)
+}
+
+type ufwRule struct {
+	num      int
+	portSpec string
+	action   string
+}
+
+type firewallResult struct {
+	MachineID    uint   `json:"machineId"`
+	MachineName  string `json:"machineName"`
+	MachineIP    string `json:"machineIp"`
+	Success      bool   `json:"success"`
+	Message      string `json:"message"`
+	AllowPorts   []int  `json:"allowPorts"`
+	DenyPorts    []int  `json:"denyPorts"`
+	SkippedPorts []int  `json:"skippedPorts"`
+}
+
+var ufwNumberedRuleRegex = regexp.MustCompile(`\[\s*(\d+)\]\s+(\S+)\s+(ALLOW|DENY)`)
+
+func parsePortsFromSpec(spec string) []int {
+	spec = strings.TrimSuffix(spec, "/tcp")
+	spec = strings.TrimSuffix(spec, "/udp")
+	var ports []int
+	for _, part := range strings.Split(spec, ",") {
+		if strings.Contains(part, ":") {
+			rng := strings.SplitN(part, ":", 2)
+			s, _ := strconv.Atoi(rng[0])
+			e, _ := strconv.Atoi(rng[1])
+			for i := s; i <= e; i++ {
+				ports = append(ports, i)
+			}
+		} else {
+			p, _ := strconv.Atoi(part)
+			if p > 0 {
+				ports = append(ports, p)
+			}
+		}
+	}
+	return ports
+}
+
+func isProtectedPort(port int) bool {
+	return port == 22 || (port >= 62500 && port <= 62501)
+}
+
+func (h *EgressMethodHandler) SyncFirewall(c *gin.Context) {
+	var methods []model.EgressMethod
+	if err := h.DB.Find(&methods).Error; err != nil {
+		jsonError(c, "查询出站方式失败")
+		return
+	}
+
+	type machineAction struct {
+		machine    model.Machine
+		allowPorts map[int]bool
+		denyPorts  map[int]bool
+	}
+	machineMap := make(map[uint]*machineAction)
+
+	for _, m := range methods {
+		if m.PublicPort <= 0 {
+			continue
+		}
+		var machineID uint
+		if m.IsDirect {
+			if m.ServiceType == "other" {
+				var os model.OtherService
+				if err := h.DB.First(&os, m.ServiceID).Error; err != nil {
+					continue
+				}
+				machineID = os.MachineID
+			} else {
+				var ds model.DockerService
+				if err := h.DB.First(&ds, m.ServiceID).Error; err != nil {
+					continue
+				}
+				machineID = ds.MachineID
+			}
+		} else {
+			if m.EgressServiceID == 0 {
+				continue
+			}
+			var ds model.DockerService
+			if err := h.DB.First(&ds, m.EgressServiceID).Error; err != nil {
+				continue
+			}
+			machineID = ds.MachineID
+		}
+
+		if _, exists := machineMap[machineID]; !exists {
+			var machine model.Machine
+			if err := h.DB.First(&machine, machineID).Error; err != nil {
+				continue
+			}
+			machineMap[machineID] = &machineAction{
+				machine:    machine,
+				allowPorts: make(map[int]bool),
+				denyPorts:  make(map[int]bool),
+			}
+		}
+
+		if isProtectedPort(m.PublicPort) {
+			continue
+		}
+		if m.Status == 1 {
+			machineMap[machineID].allowPorts[m.PublicPort] = true
+		} else {
+			if !machineMap[machineID].allowPorts[m.PublicPort] {
+				machineMap[machineID].denyPorts[m.PublicPort] = true
+			}
+		}
+	}
+
+	var results []firewallResult
+
+	for _, ma := range machineMap {
+		machine := ma.machine
+
+		if machine.SSHUser == "" || machine.SSHPassword == "" {
+			results = append(results, firewallResult{
+				MachineID: machine.ID, MachineName: machine.Name, MachineIP: machine.IP,
+				Success: false, Message: "未配置SSH凭据",
+			})
+			continue
+		}
+
+		sshPort := machine.SSHPort
+		if sshPort == 0 {
+			sshPort = 22
+		}
+		cfg := &sshutil.Config{
+			Host: machine.IP, Port: sshPort,
+			User: machine.SSHUser, Password: machine.SSHPassword,
+		}
+
+		if err := sshutil.CheckConnection(cfg); err != nil {
+			results = append(results, firewallResult{
+				MachineID: machine.ID, MachineName: machine.Name, MachineIP: machine.IP,
+				Success: false, Message: "SSH连接失败: " + err.Error(),
+			})
+			continue
+		}
+
+		statusOutput, err := sshutil.RunCommand(cfg, "ufw status numbered")
+		if err != nil {
+			results = append(results, firewallResult{
+				MachineID: machine.ID, MachineName: machine.Name, MachineIP: machine.IP,
+				Success: false, Message: "获取ufw状态失败: " + err.Error(),
+			})
+			continue
+		}
+
+		var rules []ufwRule
+		for _, line := range strings.Split(statusOutput, "\n") {
+			matches := ufwNumberedRuleRegex.FindStringSubmatch(line)
+			if len(matches) == 4 {
+				n, _ := strconv.Atoi(matches[1])
+				rules = append(rules, ufwRule{num: n, portSpec: matches[2], action: matches[3]})
+			}
+		}
+
+		var cmds []string
+		deleteCount := 0
+		skipCount := 0
+		var skippedPorts []int
+		existingAllow := make(map[int]bool)
+		existingDeny := make(map[int]bool)
+
+		sort.Slice(rules, func(i, j int) bool { return rules[i].num < rules[j].num })
+
+		for _, rule := range rules {
+			ports := parsePortsFromSpec(rule.portSpec)
+			if len(ports) == 0 {
+				continue
+			}
+
+			allProtected := true
+			for _, p := range ports {
+				if !isProtectedPort(p) {
+					allProtected = false
+					break
+				}
+			}
+			if allProtected {
+				continue
+			}
+
+			allMatch := true
+			desiredAction := ""
+			for _, p := range ports {
+				need := ""
+				if ma.allowPorts[p] {
+					need = "ALLOW"
+				} else if ma.denyPorts[p] {
+					need = "DENY"
+				}
+				if need == "" {
+					allMatch = false
+					break
+				}
+				if desiredAction == "" {
+					desiredAction = need
+				} else if desiredAction != need {
+					allMatch = false
+					break
+				}
+			}
+
+			if allMatch && rule.action == desiredAction {
+				for _, p := range ports {
+					if rule.action == "ALLOW" {
+						existingAllow[p] = true
+					} else {
+						existingDeny[p] = true
+					}
+					skippedPorts = append(skippedPorts, p)
+				}
+				skipCount++
+				continue
+			}
+
+			cmds = append(cmds, fmt.Sprintf("ufw --force delete %d", rule.num))
+			deleteCount++
+		}
+
+		for p := range ma.allowPorts {
+			if !existingAllow[p] {
+				cmds = append(cmds, fmt.Sprintf("ufw allow %d/tcp", p))
+			}
+		}
+		for p := range ma.denyPorts {
+			if !existingDeny[p] {
+				cmds = append(cmds, fmt.Sprintf("ufw deny %d/tcp", p))
+			}
+		}
+
+		if len(cmds) > 0 {
+			batchCmd := strings.Join(cmds, "; ")
+			if _, err := sshutil.RunCommand(cfg, batchCmd); err != nil {
+				results = append(results, firewallResult{
+					MachineID: machine.ID, MachineName: machine.Name, MachineIP: machine.IP,
+					Success: false, Message: "执行命令失败: " + err.Error(),
+				})
+				continue
+			}
+		}
+
+		var allowList, denyList []int
+		for p := range ma.allowPorts {
+			allowList = append(allowList, p)
+		}
+		for p := range ma.denyPorts {
+			denyList = append(denyList, p)
+		}
+		sort.Ints(allowList)
+		sort.Ints(denyList)
+
+		msg := "同步完成"
+		if skipCount > 0 {
+			msg += fmt.Sprintf("，%d 条规则无需变动", skipCount)
+		}
+		if deleteCount > 0 {
+			msg += fmt.Sprintf("，删除 %d 条规则", deleteCount)
+		}
+		newCount := 0
+		for p := range ma.allowPorts {
+			if !existingAllow[p] {
+				newCount++
+			}
+		}
+		for p := range ma.denyPorts {
+			if !existingDeny[p] {
+				newCount++
+			}
+		}
+		if newCount > 0 {
+			msg += fmt.Sprintf("，新增 %d 条规则", newCount)
+		}
+		if len(cmds) == 0 {
+			msg = "防火墙已是最新状态，无需同步"
+		}
+
+		results = append(results, firewallResult{
+			MachineID: machine.ID, MachineName: machine.Name, MachineIP: machine.IP,
+			Success: true, Message: msg,
+			AllowPorts: allowList, DenyPorts: denyList, SkippedPorts: skippedPorts,
+		})
+	}
+
+	jsonSuccess(c, gin.H{
+		"results": results,
+		"total":   len(results),
+	})
+}
+
+func (h *EgressMethodHandler) GenerateFrpc(c *gin.Context) {
+	var req struct {
+		IDs []uint `json:"ids"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil || len(req.IDs) == 0 {
+		jsonError(c, "请选择至少一个出站方式")
+		return
+	}
+
+	var methods []model.EgressMethod
+	if err := h.DB.Where("id IN ?", req.IDs).Find(&methods).Error; err != nil || len(methods) == 0 {
+		jsonError(c, "出站方式不存在")
+		return
+	}
+
+	var egressServiceID uint
+	for _, m := range methods {
+		if m.IsDirect {
+			jsonError(c, "本机直连的出站方式不支持生成 FRP 配置")
+			return
+		}
+		if egressServiceID == 0 {
+			egressServiceID = m.EgressServiceID
+		} else if m.EgressServiceID != egressServiceID {
+			jsonError(c, "请选择同一出站服务的出站方式")
+			return
+		}
+	}
+
+	var egressService model.DockerService
+	if err := h.DB.First(&egressService, egressServiceID).Error; err != nil {
+		jsonError(c, "出站服务不存在")
+		return
+	}
+
+	var egressMachine model.Machine
+	if err := h.DB.First(&egressMachine, egressService.MachineID).Error; err != nil {
+		jsonError(c, "出站服务主机不存在")
+		return
+	}
+
+	var lines []string
+	lines = append(lines, fmt.Sprintf(`serverAddr = "%s"`, egressMachine.IP))
+	lines = append(lines, "serverPort = 62500")
+	lines = append(lines, `auth.token = "shiwan233"`)
+	lines = append(lines, "")
+
+	for _, m := range methods {
+		var serviceName string
+		if m.ServiceType == "other" {
+			var os model.OtherService
+			if err := h.DB.First(&os, m.ServiceID).Error; err == nil {
+				serviceName = os.Name
+			}
+		} else {
+			var ds model.DockerService
+			if err := h.DB.First(&ds, m.ServiceID).Error; err == nil {
+				serviceName = ds.Name
+			}
+		}
+		if serviceName == "" {
+			serviceName = fmt.Sprintf("svc-%d", m.ServiceID)
+		}
+
+		sectionName := m.ProxyName
+		if sectionName == "" {
+			sectionName = fmt.Sprintf("%s.%d", serviceName, m.PublicPort)
+		}
+
+		protocol := strings.ToLower(m.Protocol)
+		if protocol == "" {
+			protocol = "tcp"
+		}
+
+		lines = append(lines, "[[proxies]]")
+		lines = append(lines, fmt.Sprintf(`name = "%s"`, sectionName))
+		lines = append(lines, fmt.Sprintf(`type = "%s"`, protocol))
+		lines = append(lines, fmt.Sprintf(`localIP = "%s"`, m.InternalIP))
+		lines = append(lines, fmt.Sprintf("localPort = %d", m.InternalPort))
+		lines = append(lines, fmt.Sprintf("remotePort = %d", m.PublicPort))
+		lines = append(lines, "")
+	}
+
+	config := strings.Join(lines, "\n")
+
+	jsonSuccess(c, gin.H{
+		"config": config,
+	})
 }

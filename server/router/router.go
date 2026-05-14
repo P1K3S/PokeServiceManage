@@ -55,6 +55,8 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 			egress.POST("", egressHandler.Create)
 			egress.PUT("/:id", egressHandler.Update)
 			egress.DELETE("/:id", egressHandler.Delete)
+			egress.POST("/sync-firewall", egressHandler.SyncFirewall)
+			egress.POST("/generate-frpc", egressHandler.GenerateFrpc)
 		}
 	}
 

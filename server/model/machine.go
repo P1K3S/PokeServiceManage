@@ -10,6 +10,7 @@ type Machine struct {
 	Disk        string `gorm:"size:64;default:''" json:"disk"`
 	OS          string `gorm:"size:64;default:''" json:"os"`
 	Status      int8   `gorm:"default:1" json:"status"`
+	SSHEnabled  bool   `gorm:"default:false" json:"sshEnabled"`
 	SSHPort     int    `gorm:"default:22" json:"sshPort"`
 	SSHUser     string `gorm:"size:32;default:'root'" json:"sshUser"`
 	SSHPassword string `gorm:"size:128" json:"sshPassword"`

@@ -115,7 +115,7 @@ func (h *MachineHandler) Create(c *gin.Context) {
 		return
 	}
 
-	if machine.SSHUser != "" && machine.SSHPassword != "" {
+	if machine.SSHEnabled && machine.SSHUser != "" && machine.SSHPassword != "" {
 		go h.discoverDockerServices(machine.ID)
 	}
 
@@ -305,6 +305,11 @@ func (h *MachineHandler) CheckSSH(c *gin.Context) {
 		return
 	}
 
+	if !machine.SSHEnabled {
+		jsonError(c, "该主机未启用 SSH 连接")
+		return
+	}
+
 	sshPort := machine.SSHPort
 	if sshPort == 0 {
 		sshPort = 22
@@ -466,6 +471,9 @@ func (h *MachineHandler) discoverDockerServices(machineID uint) (int, error) {
 	if err := h.DB.First(&machine, machineID).Error; err != nil {
 		return 0, err
 	}
+	if !machine.SSHEnabled {
+		return 0, fmt.Errorf("SSH not enabled")
+	}
 	if machine.SSHUser == "" || machine.SSHPassword == "" {
 		return 0, fmt.Errorf("SSH not configured")
 	}
@@ -559,7 +567,9 @@ func (h *MachineHandler) DiscoverServices(c *gin.Context) {
 	count, err := h.discoverDockerServices(uint(id))
 	if err != nil {
 		msg := err.Error()
-		if strings.Contains(msg, "SSH not configured") {
+		if strings.Contains(msg, "SSH not enabled") {
+			jsonError(c, "该主机未启用 SSH 连接")
+		} else if strings.Contains(msg, "SSH not configured") {
 			jsonError(c, "主机未配置 SSH 连接信息，请先在主机管理中设置")
 		} else if strings.Contains(msg, "connection refused") || strings.Contains(msg, "no route to host") || strings.Contains(msg, "i/o timeout") {
 			jsonError(c, "SSH 连接失败，请检查主机状态和网络连接")

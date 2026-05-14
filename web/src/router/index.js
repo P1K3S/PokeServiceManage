@@ -31,6 +31,12 @@ const routes = [
     name: 'EgressList',
     component: () => import('../views/EgressList.vue'),
     meta: { title: '出站方式管理' }
+  },
+  {
+    path: '/frpc-config',
+    name: 'FrpcConfig',
+    component: () => import('../views/FrpcConfig.vue'),
+    meta: { title: '内网穿透配置' }
   }
 ]
 

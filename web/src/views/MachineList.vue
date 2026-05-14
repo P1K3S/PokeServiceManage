@@ -123,6 +123,9 @@
           <el-switch v-model="form.status" :active-value="1" :inactive-value="0" active-text="在线" inactive-text="离线" />
         </el-form-item>
         <el-divider content-position="left">SSH 连接信息</el-divider>
+        <el-form-item label="启用SSH">
+          <el-switch v-model="form.sshEnabled" active-text="是" inactive-text="否" />
+        </el-form-item>
         <el-form-item label="SSH端口">
           <el-input-number v-model="form.sshPort" :min="1" :max="65535" style="width: 100%" placeholder="默认 22" />
         </el-form-item>
@@ -201,7 +204,7 @@ const detailData = ref(null)
 
 const form = reactive({
   name: '', ip: '', machineType: 'LAN', cpu: '', memory: '', disk: '', os: '',
-  sshPort: 22, sshUser: 'root', sshPassword: '', status: 1, remark: ''
+  sshPort: 22, sshUser: 'root', sshPassword: '', sshEnabled: false, status: 1, remark: ''
 })
 
 const rules = {
@@ -249,11 +252,11 @@ const openForm = (mode, row) => {
       name: row.name, ip: row.ip, machineType: row.machineType,
       cpu: row.cpu || '', memory: row.memory || '', disk: row.disk || '',
       os: row.os || '', sshPort: row.sshPort || 22, sshUser: row.sshUser || 'root',
-      sshPassword: '', status: row.status, remark: row.remark || ''
+      sshPassword: '', sshEnabled: !!row.sshEnabled, status: row.status, remark: row.remark || ''
     })
   } else {
     editId.value = null
-    Object.assign(form, { name: '', ip: '', machineType: 'LAN', cpu: '', memory: '', disk: '', os: '', sshPort: 22, sshUser: 'root', sshPassword: '', status: 1, remark: '' })
+    Object.assign(form, { name: '', ip: '', machineType: 'LAN', cpu: '', memory: '', disk: '', os: '', sshPort: 22, sshUser: 'root', sshPassword: '', sshEnabled: false, status: 1, remark: '' })
   }
 }
 
@@ -289,7 +292,9 @@ const handleCheckAllSSH = async () => {
   allSshChecking.value = true
   let online = 0
   let offline = 0
+  let skipped = 0
   for (const m of list.value) {
+    if (!m.sshEnabled) { skipped++; continue }
     try {
       const res = await checkMachineSSH(m.id)
       m.status = res.data.status
@@ -302,7 +307,7 @@ const handleCheckAllSSH = async () => {
       offline++
     }
   }
-  ElMessage.success(`检测完成：在线 ${online} 个，离线 ${offline} 个`)
+  ElMessage.success(`检测完成：在线 ${online} 个，离线 ${offline} 个${skipped > 0 ? '，跳过 ' + skipped + ' 个未启用SSH' : ''}`)
   fetchData()
   allSshChecking.value = false
 }
@@ -311,6 +316,7 @@ const handleDiscoverAllServices = async () => {
   allDiscovering.value = true
   let total = 0
   for (const m of list.value) {
+    if (!m.sshEnabled) continue
     try {
       const res = await discoverMachineServices(m.id)
       total += res.data.count || 0

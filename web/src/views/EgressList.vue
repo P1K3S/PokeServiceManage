@@ -4,7 +4,12 @@
       <template #header>
         <div style="display: flex; justify-content: space-between; align-items: center">
           <span>出站方式列表</span>
-          <el-button type="primary" @click="openForm('create')">新增出站方式</el-button>
+          <div>
+            <el-button type="warning" @click="handleSyncFirewall" :loading="syncing">
+              <el-icon style="margin-right: 4px"><Monitor /></el-icon>同步防火墙
+            </el-button>
+            <el-button type="primary" @click="openForm('create')">新增出站方式</el-button>
+          </div>
         </div>
       </template>
 
@@ -49,12 +54,6 @@
             {{ row.publicIp }}:{{ row.publicPort }}
           </template>
         </el-table-column>
-        <el-table-column label="内网地址" min-width="180" align="center">
-          <template #default="{ row }">
-            {{ row.internalIp }}:{{ row.internalPort }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="protocol" label="协议" width="70" align="center" />
         <el-table-column label="状态" width="70" align="center">
           <template #default="{ row }">
             <el-tag :type="row.status === 1 ? 'success' : 'warning'" size="small">
@@ -126,8 +125,6 @@
           <el-select v-model="form.protocol" style="width: 100%">
             <el-option label="TCP" value="TCP" />
             <el-option label="UDP" value="UDP" />
-            <el-option label="HTTP" value="HTTP" />
-            <el-option label="HTTPS" value="HTTPS" />
           </el-select>
         </el-form-item>
         <el-form-item label="状态">
@@ -170,15 +167,41 @@
         <el-button @click="detailVisible = false">关闭</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="firewallVisible" title="防火墙同步结果" width="700px" :close-on-click-modal="false" :lock-scroll="false">
+      <div v-if="firewallResults.length === 0" style="text-align: center; color: #999; padding: 20px">
+        没有需要同步的主机
+      </div>
+      <div v-for="r in firewallResults" :key="r.machineId" style="margin-bottom: 16px; border: 1px solid #e0e0e0; border-radius: 8px; padding: 12px">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px">
+          <span style="font-weight: bold">{{ r.machineName }} ({{ r.machineIp }})</span>
+          <el-tag :type="r.success ? 'success' : 'danger'" size="small">{{ r.success ? '成功' : '失败' }}</el-tag>
+        </div>
+        <div style="color: #666; font-size: 13px; margin-bottom: 6px">{{ r.message }}</div>
+        <div v-if="r.allowPorts && r.allowPorts.length > 0" style="font-size: 12px; color: #67c23a; margin-bottom: 2px">
+          ALLOW: {{ r.allowPorts.join(', ') }}
+        </div>
+        <div v-if="r.denyPorts && r.denyPorts.length > 0" style="font-size: 12px; color: #f56c6c; margin-bottom: 2px">
+          DENY: {{ r.denyPorts.join(', ') }}
+        </div>
+        <div v-if="r.skippedPorts && r.skippedPorts.length > 0" style="font-size: 12px; color: #909399">
+          未变动: {{ r.skippedPorts.join(', ') }}
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="firewallVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { reactive, ref, onMounted } from 'vue'
-import { getEgressMethods, createEgressMethod, updateEgressMethod, deleteEgressMethod } from '../api/egress'
+import { getEgressMethods, createEgressMethod, updateEgressMethod, deleteEgressMethod, syncFirewall } from '../api/egress'
 import { getServices } from '../api/service'
 import { getOtherServices } from '../api/otherService'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Monitor } from '@element-plus/icons-vue'
 
 const list = ref([])
 const total = ref(0)
@@ -198,6 +221,10 @@ const editId = ref(null)
 
 const detailVisible = ref(false)
 const detailData = ref(null)
+
+const syncing = ref(false)
+const firewallVisible = ref(false)
+const firewallResults = ref([])
 
 const form = reactive({
   serviceId: '', serviceType: 'docker', isDirect: true, egressServiceId: '', proxyName: '',
@@ -385,13 +412,7 @@ const viewDetail = (row) => {
 }
 
 const copyAddress = (row) => {
-  const proto = (row.protocol || '').toUpperCase()
-  let addr
-  if (proto === 'HTTP' || proto === 'HTTPS') {
-    addr = `${proto.toLowerCase()}://${row.publicIp}:${row.publicPort}`
-  } else {
-    addr = `${row.publicIp}:${row.publicPort}`
-  }
+  const addr = `${row.publicIp}:${row.publicPort}`
   if (navigator.clipboard && window.isSecureContext) {
     navigator.clipboard.writeText(addr).then(() => {
       ElMessage.success(`已复制: ${addr}`)
@@ -417,6 +438,27 @@ const fallbackCopy = (text) => {
     ElMessage.warning('复制失败，请手动复制')
   }
   document.body.removeChild(textarea)
+}
+
+const handleSyncFirewall = async () => {
+  syncing.value = true
+  try {
+    const res = await syncFirewall()
+    firewallResults.value = res.data.results || []
+    firewallVisible.value = true
+    const successCount = firewallResults.value.filter(r => r.success).length
+    if (successCount === firewallResults.value.length && firewallResults.value.length > 0) {
+      ElMessage.success(`防火墙同步完成，${successCount} 台主机全部成功`)
+    } else if (firewallResults.value.length > 0) {
+      ElMessage.warning(`防火墙同步完成，${successCount}/${firewallResults.value.length} 台主机成功`)
+    } else {
+      ElMessage.info('没有需要同步的主机')
+    }
+  } catch {
+    ElMessage.error('防火墙同步失败')
+  } finally {
+    syncing.value = false
+  }
 }
 
 onMounted(() => {
