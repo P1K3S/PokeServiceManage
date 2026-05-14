@@ -48,7 +48,7 @@ func (h *EgressMethodHandler) List(c *gin.Context) {
 
 	var methods []model.EgressMethod
 	offset := (page - 1) * pageSize
-	if err := query.Offset(offset).Limit(pageSize).Order("id DESC").Find(&methods).Error; err != nil {
+	if err := query.Offset(offset).Limit(pageSize).Order("public_port ASC").Find(&methods).Error; err != nil {
 		jsonError(c, "查询出站方式列表失败")
 		return
 	}
