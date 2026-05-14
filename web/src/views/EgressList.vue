@@ -11,15 +11,13 @@
       <el-form :inline="true" :model="search" style="margin-bottom: 10px">
         <el-form-item label="所属服务">
           <el-select v-model="search.serviceId" placeholder="全部" clearable @change="fetchData" style="width: 160px" filterable>
-            <el-option v-for="s in serviceOptions" :key="s.id" :label="s.name" :value="s.id" />
+            <el-option v-for="s in allServiceOptions" :key="s.value" :label="s.label" :value="s.value" />
           </el-select>
         </el-form-item>
-        <el-form-item label="方式类型">
-          <el-select v-model="search.methodType" placeholder="全部" clearable @change="fetchData" style="width: 140px">
-            <el-option label="FRP 内网穿透" value="FRP" />
-            <el-option label="端口映射" value="PORT_MAPPING" />
-            <el-option label="VPN" value="VPN" />
-            <el-option label="直接访问" value="DIRECT" />
+        <el-form-item label="出站服务">
+          <el-select v-model="search.egressType" placeholder="全部" clearable @change="fetchData" style="width: 160px">
+            <el-option label="本机直连" value="direct" />
+            <el-option label="出站服务" value="egress" />
           </el-select>
         </el-form-item>
         <el-form-item label="状态">
@@ -34,20 +32,24 @@
       </el-form>
 
       <el-table :data="list" stripe border v-loading="loading">
-        <el-table-column prop="serviceName" label="所属服务" min-width="130" />
-        <el-table-column prop="machineName" label="所属主机" min-width="130" />
-        <el-table-column label="方式类型" width="120">
+        <el-table-column prop="proxyName" label="代理名称" min-width="180" align="center" show-overflow-tooltip />
+        <el-table-column label="所属服务" min-width="160" align="center" show-overflow-tooltip>
           <template #default="{ row }">
-            <el-tag :type="methodTypeTag(row.methodType)" size="small">{{ methodTypeLabel(row.methodType) }}</el-tag>
+            {{ row.serviceName ? row.serviceName + '-' + row.machineName : '-' }}
           </template>
         </el-table-column>
-        <el-table-column prop="proxyName" label="代理名称" min-width="120" />
-        <el-table-column label="公网地址" min-width="180">
+        <el-table-column label="出站服务" width="140" align="center">
+          <template #default="{ row }">
+            <el-tag v-if="row.egressServiceName" type="success" size="small">{{ row.egressServiceName }}</el-tag>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="公网地址" min-width="180" align="center">
           <template #default="{ row }">
             {{ row.publicIp }}:{{ row.publicPort }}
           </template>
         </el-table-column>
-        <el-table-column label="内网地址" min-width="180">
+        <el-table-column label="内网地址" min-width="180" align="center">
           <template #default="{ row }">
             {{ row.internalIp }}:{{ row.internalPort }}
           </template>
@@ -60,7 +62,7 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column label="操作" width="200" fixed="right" align="center">
           <template #default="{ row }">
             <el-button type="success" link size="small" @click="copyAddress(row)">复制地址</el-button>
             <el-button type="primary" link size="small" @click="openForm('edit', row)">编辑</el-button>
@@ -83,16 +85,24 @@
     <el-dialog v-model="formVisible" :title="formMode === 'create' ? '新增出站方式' : '编辑出站方式'" width="560px" :close-on-click-modal="false" :lock-scroll="false">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="110px">
         <el-form-item label="所属服务" prop="serviceId">
-          <el-select v-model="form.serviceId" placeholder="请选择" style="width: 100%" filterable :teleported="false">
-            <el-option v-for="s in serviceOptions" :key="s.id" :label="s.name" :value="s.id" />
+          <el-select v-model="form.serviceId" placeholder="请选择" style="width: 100%" filterable :teleported="false" @change="onServiceChange">
+            <el-option-group label="Docker服务">
+              <el-option v-for="s in dockerServiceOptions" :key="'docker-' + s.id" :label="s.name + '-' + s.machineName" :value="'docker-' + s.id" />
+            </el-option-group>
+            <el-option-group label="其他服务">
+              <el-option v-for="s in otherServiceOptions" :key="'other-' + s.id" :label="s.name + '-' + s.machineName" :value="'other-' + s.id" />
+            </el-option-group>
           </el-select>
         </el-form-item>
-        <el-form-item label="方式类型" prop="methodType">
-          <el-select v-model="form.methodType" placeholder="请选择" style="width: 100%">
-            <el-option label="FRP 内网穿透" value="FRP" />
-            <el-option label="端口映射" value="PORT_MAPPING" />
-            <el-option label="VPN" value="VPN" />
-            <el-option label="直接访问" value="DIRECT" />
+        <el-form-item label="出站服务" prop="isDirect">
+          <el-radio-group v-model="form.isDirect" @change="onEgressTypeChange">
+            <el-radio :value="true">本机直连</el-radio>
+            <el-radio :value="false">出站服务</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item v-if="!form.isDirect" label="选择出站服务" prop="egressServiceId">
+          <el-select v-model="form.egressServiceId" placeholder="请选择" style="width: 100%" filterable :teleported="false" @change="onEgressServiceChange">
+            <el-option v-for="s in egressServiceOptions" :key="s.id" :label="s.name + '-' + s.machineName" :value="s.id" />
           </el-select>
         </el-form-item>
         <el-form-item label="代理/隧道名称">
@@ -102,13 +112,13 @@
           <el-input v-model="form.publicIp" placeholder="对外公网IP" />
         </el-form-item>
         <el-form-item label="公网端口" prop="publicPort">
-          <el-input-number v-model="form.publicPort" :min="1" :max="65535" style="width: 100%" />
+          <el-input-number v-model="form.publicPort" :min="0" :max="65535" style="width: 100%" />
         </el-form-item>
         <el-form-item label="内网IP" prop="internalIp">
           <el-input v-model="form.internalIp" placeholder="内网IP地址" />
         </el-form-item>
         <el-form-item label="内网端口" prop="internalPort">
-          <el-input-number v-model="form.internalPort" :min="1" :max="65535" style="width: 100%" />
+          <el-input-number v-model="form.internalPort" :min="0" :max="65535" style="width: 100%" />
         </el-form-item>
         <el-form-item label="协议">
           <el-select v-model="form.protocol" style="width: 100%">
@@ -137,6 +147,7 @@
 import { reactive, ref, onMounted } from 'vue'
 import { getEgressMethods, createEgressMethod, updateEgressMethod, deleteEgressMethod } from '../api/egress'
 import { getServices } from '../api/service'
+import { getOtherServices } from '../api/otherService'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const list = ref([])
@@ -144,8 +155,11 @@ const total = ref(0)
 const page = ref(1)
 const pageSize = ref(10)
 const loading = ref(false)
-const serviceOptions = ref([])
-const search = reactive({ serviceId: '', methodType: '', status: '' })
+const dockerServiceOptions = ref([])
+const otherServiceOptions = ref([])
+const egressServiceOptions = ref([])
+const allServiceOptions = ref([])
+const search = reactive({ serviceId: '', egressType: '', status: '' })
 const formVisible = ref(false)
 const formMode = ref('create')
 const formRef = ref(null)
@@ -153,34 +167,30 @@ const submitting = ref(false)
 const editId = ref(null)
 
 const form = reactive({
-  serviceId: null, methodType: 'FRP', proxyName: '',
-  publicIp: '', publicPort: 8080, internalIp: '', internalPort: 80,
+  serviceId: '', serviceType: 'docker', isDirect: true, egressServiceId: '', methodType: 'FRP', proxyName: '',
+  publicIp: '', publicPort: 0, internalIp: '', internalPort: 0,
   protocol: 'TCP', status: 1, remark: ''
 })
 
 const rules = {
   serviceId: [{ required: true, message: '请选择所属服务', trigger: 'change' }],
-  methodType: [{ required: true, message: '请选择方式类型', trigger: 'change' }],
+  isDirect: [{ required: true, message: '请选择出站服务类型', trigger: 'change' }],
+  egressServiceId: [{ required: true, message: '请选择出站服务', trigger: 'change' }],
   publicIp: [{ required: true, message: '请输入公网IP', trigger: 'blur' }],
   publicPort: [{ required: true, message: '请输入公网端口', trigger: 'blur' }],
   internalIp: [{ required: true, message: '请输入内网IP', trigger: 'blur' }],
   internalPort: [{ required: true, message: '请输入内网端口', trigger: 'blur' }]
 }
 
-const methodTypeLabel = (type) => {
-  const map = { FRP: 'FRP内网穿透', PORT_MAPPING: '端口映射', VPN: 'VPN', DIRECT: '直接访问' }
-  return map[type] || type
-}
-
-const methodTypeTag = (type) => {
-  const map = { FRP: 'success', PORT_MAPPING: '', VPN: 'warning', DIRECT: 'info' }
-  return map[type] || 'info'
-}
-
 const fetchData = async () => {
   loading.value = true
   try {
-    const res = await getEgressMethods({ page: page.value, pageSize: pageSize.value, ...search })
+    const params = { page: page.value, pageSize: pageSize.value }
+    if (search.serviceId) params.serviceId = search.serviceId
+    if (search.egressType === 'direct') params.isDirect = true
+    else if (search.egressType === 'egress') params.isDirect = false
+    if (search.status !== '') params.status = search.status
+    const res = await getEgressMethods(params)
     list.value = res.data.list
     total.value = res.data.total
   } catch {
@@ -191,9 +201,76 @@ const fetchData = async () => {
 
 const fetchServices = async () => {
   try {
-    const res = await getServices({ page: 1, pageSize: 200 })
-    serviceOptions.value = res.data.list
+    const [dockerRes, otherRes] = await Promise.all([
+      getServices({ page: 1, pageSize: 200 }),
+      getOtherServices({ page: 1, pageSize: 200 })
+    ])
+    dockerServiceOptions.value = dockerRes.data.list
+    otherServiceOptions.value = otherRes.data.list
+    egressServiceOptions.value = dockerRes.data.list.filter(s => s.isEgress)
+
+    const options = []
+    for (const s of dockerRes.data.list) {
+      options.push({ value: 'docker-' + s.id, label: s.name + '-' + (s.machineName || '') })
+    }
+    for (const s of otherRes.data.list) {
+      options.push({ value: 'other-' + s.id, label: s.name + '-' + (s.machineName || '') })
+    }
+    allServiceOptions.value = options
   } catch {}
+}
+
+const getServiceInfo = (serviceIdStr) => {
+  if (!serviceIdStr) return null
+  if (serviceIdStr.startsWith('docker-')) {
+    const id = parseInt(serviceIdStr.replace('docker-', ''))
+    const s = dockerServiceOptions.value.find(x => x.id === id)
+    return s ? { ...s, serviceType: 'docker', numericId: id } : null
+  } else if (serviceIdStr.startsWith('other-')) {
+    const id = parseInt(serviceIdStr.replace('other-', ''))
+    const s = otherServiceOptions.value.find(x => x.id === id)
+    return s ? { ...s, serviceType: 'other', numericId: id } : null
+  }
+  return null
+}
+
+const onServiceChange = () => {
+  autoFillAddresses()
+}
+
+const onEgressTypeChange = () => {
+  form.egressServiceId = ''
+  autoFillAddresses()
+}
+
+const onEgressServiceChange = () => {
+  autoFillAddresses()
+}
+
+const autoFillAddresses = () => {
+  const svc = getServiceInfo(form.serviceId)
+  if (!svc) return
+
+  const serviceMachineIp = svc.machineIp || ''
+  const servicePort = svc.port || 0
+
+  if (form.isDirect) {
+    form.publicIp = serviceMachineIp
+    form.publicPort = servicePort
+    form.internalIp = serviceMachineIp
+    form.internalPort = servicePort
+  } else {
+    const egressId = Number(form.egressServiceId)
+    if (egressId > 0) {
+      const egressSvc = egressServiceOptions.value.find(x => x.id === egressId)
+      if (egressSvc) {
+        form.publicIp = egressSvc.machineIp || ''
+        form.publicPort = egressSvc.port || 0
+        form.internalIp = serviceMachineIp
+        form.internalPort = servicePort
+      }
+    }
+  }
 }
 
 const openForm = (mode, row) => {
@@ -201,8 +278,10 @@ const openForm = (mode, row) => {
   formVisible.value = true
   if (mode === 'edit' && row) {
     editId.value = row.id
+    const sid = row.serviceType === 'other' ? 'other-' + row.serviceId : 'docker-' + row.serviceId
     Object.assign(form, {
-      serviceId: row.serviceId, methodType: row.methodType, proxyName: row.proxyName || '',
+      serviceId: sid, serviceType: row.serviceType || 'docker',
+      isDirect: row.isDirect || false, egressServiceId: row.egressServiceId || '', methodType: row.methodType, proxyName: row.proxyName || '',
       publicIp: row.publicIp, publicPort: row.publicPort,
       internalIp: row.internalIp, internalPort: row.internalPort,
       protocol: row.protocol || 'TCP', status: row.status, remark: row.remark || ''
@@ -210,23 +289,43 @@ const openForm = (mode, row) => {
   } else {
     editId.value = null
     Object.assign(form, {
-      serviceId: '', methodType: 'FRP', proxyName: '',
-      publicIp: '', publicPort: 8080, internalIp: '', internalPort: 80,
+      serviceId: '', serviceType: 'docker', isDirect: true, egressServiceId: '', methodType: 'FRP', proxyName: '',
+      publicIp: '', publicPort: 0, internalIp: '', internalPort: 0,
       protocol: 'TCP', status: 1, remark: ''
     })
   }
 }
 
 const handleSubmit = async () => {
+  if (!form.isDirect && !form.egressServiceId) {
+    ElMessage.warning('请选择出站服务')
+    return
+  }
   const valid = await formRef.value.validate().catch(() => false)
   if (!valid) return
   submitting.value = true
   try {
+    const svc = getServiceInfo(form.serviceId)
+    const payload = {
+      serviceId: svc ? svc.numericId : 0,
+      serviceType: svc ? svc.serviceType : 'docker',
+      isDirect: form.isDirect,
+      egressServiceId: form.isDirect ? 0 : Number(form.egressServiceId),
+      methodType: form.methodType,
+      proxyName: form.proxyName,
+      publicIp: form.publicIp,
+      publicPort: form.publicPort,
+      internalIp: form.internalIp,
+      internalPort: form.internalPort,
+      protocol: form.protocol,
+      status: form.status,
+      remark: form.remark
+    }
     if (formMode.value === 'create') {
-      await createEgressMethod(form)
+      await createEgressMethod(payload)
       ElMessage.success('创建成功')
     } else {
-      await updateEgressMethod(editId.value, form)
+      await updateEgressMethod(editId.value, payload)
       ElMessage.success('更新成功')
     }
     formVisible.value = false

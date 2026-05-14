@@ -6,12 +6,11 @@ import (
 	"net"
 	"strconv"
 	"strings"
-	"time"
 
 	"service-manage/model"
+	sshutil "service-manage/utils/ssh"
 
 	"github.com/gin-gonic/gin"
-	"golang.org/x/crypto/ssh"
 	"gorm.io/gorm"
 )
 
@@ -246,33 +245,6 @@ func (h *MachineHandler) Overview(c *gin.Context) {
 	})
 }
 
-func checkSSHConn(ip string, port int, user, password string) error {
-	addr := net.JoinHostPort(ip, strconv.Itoa(port))
-	if user != "" && password != "" {
-		config := &ssh.ClientConfig{
-			User: user,
-			Auth: []ssh.AuthMethod{
-				ssh.Password(password),
-			},
-			HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-			Timeout:         5 * time.Second,
-		}
-		conn, err := ssh.Dial("tcp", addr, config)
-		if err != nil {
-			return err
-		}
-		conn.Close()
-		return nil
-	}
-	dialer := net.Dialer{Timeout: 5 * time.Second}
-	conn, err := dialer.Dial("tcp", addr)
-	if err != nil {
-		return err
-	}
-	conn.Close()
-	return nil
-}
-
 func (h *MachineHandler) CheckSSH(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	var machine model.Machine
@@ -286,7 +258,12 @@ func (h *MachineHandler) CheckSSH(c *gin.Context) {
 		sshPort = 22
 	}
 
-	err := checkSSHConn(machine.IP, sshPort, machine.SSHUser, machine.SSHPassword)
+	err := sshutil.CheckConnection(&sshutil.Config{
+		Host:     machine.IP,
+		Port:     sshPort,
+		User:     machine.SSHUser,
+		Password: machine.SSHPassword,
+	})
 
 	newStatus := int8(1)
 	msg := "SSH连接成功"
@@ -444,14 +421,22 @@ func (h *MachineHandler) discoverDockerServices(machineID uint) (int, error) {
 	if sshPort == 0 {
 		sshPort = 22
 	}
-	output, err := runSSHCommand(machine.IP, sshPort, machine.SSHUser, machine.SSHPassword,
-		"docker ps -a --format '{{json .}}'")
+	output, err := sshutil.RunCommand(&sshutil.Config{
+		Host:     machine.IP,
+		Port:     sshPort,
+		User:     machine.SSHUser,
+		Password: machine.SSHPassword,
+	}, "docker ps -a --format '{{json .}}'")
 	if err != nil {
 		return 0, err
 	}
 
-	ipOutput, _ := runSSHCommand(machine.IP, sshPort, machine.SSHUser, machine.SSHPassword,
-		"docker inspect $(docker ps -a -q) -f '{{.Name}}\t{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' 2>/dev/null; true")
+	ipOutput, _ := sshutil.RunCommand(&sshutil.Config{
+		Host:     machine.IP,
+		Port:     sshPort,
+		User:     machine.SSHUser,
+		Password: machine.SSHPassword,
+	}, "docker inspect $(docker ps -a -q) -f '{{.Name}}\t{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' 2>/dev/null; true")
 
 	ipMap := make(map[string]string)
 	for _, line := range strings.Split(strings.TrimSpace(ipOutput), "\n") {

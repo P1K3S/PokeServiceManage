@@ -29,8 +29,8 @@
       </el-form>
 
       <el-table :data="list" stripe border v-loading="loading" style="width: 100%">
-        <el-table-column prop="name" label="服务名称" min-width="140" show-overflow-tooltip />
-        <el-table-column prop="machineName" label="所属主机" width="140" show-overflow-tooltip />
+        <el-table-column prop="name" label="服务名称" min-width="140" show-overflow-tooltip align="center" />
+        <el-table-column prop="machineName" label="所属主机" width="140" show-overflow-tooltip align="center" />
         <el-table-column prop="port" label="端口" width="100" align="center" />
         <el-table-column prop="protocol" label="协议" width="70" align="center" />
         <el-table-column label="状态" width="80" align="center">
@@ -40,8 +40,8 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="remark" label="备注" min-width="160" show-overflow-tooltip />
-        <el-table-column label="操作" width="170">
+        <el-table-column prop="remark" label="备注" min-width="160" show-overflow-tooltip align="center" />
+        <el-table-column label="操作" width="170" align="center">
           <template #default="{ row }">
             <el-button type="primary" link size="small" @click="openForm('edit', row)">编辑</el-button>
             <el-button type="danger" link size="small" @click="handleDelete(row)">删除</el-button>

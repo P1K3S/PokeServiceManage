@@ -252,3 +252,258 @@ Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-
 [GIN] 2026/05/14 - 09:42:05 | 200 |     19.7143ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
 [GIN] 2026/05/14 - 09:42:06 | 200 |     12.4553ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
 [GIN] 2026/05/14 - 09:42:06 | 200 |     17.4017ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+
+2026/05/14 10:09:23 [35mD:/GraduationProject/PokeServiceManage/server/main.go:34
+[0m[31m[error] [0mfailed to initialize database, got error dial tcp 10.10.10.2:9243: connectex: A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond.
+2026-05-14T10:09:23.874+0800	FATAL	server/main.go:36	连接数据库失败: dial tcp 10.10.10.2:9243: connectex: A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond.
+^C
+2026/05/14 10:56:34 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[435.698ms] [33m[rows:-][35m SELECT DATABASE()[0m
+
+2026/05/14 10:56:35 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[360.447ms] [33m[rows:1][35m SELECT SCHEMA_NAME from Information_schema.SCHEMATA where SCHEMA_NAME LIKE 'service_manage%' ORDER BY SCHEMA_NAME='service_manage' DESC,SCHEMA_NAME limit 1[0m
+
+2026/05/14 10:56:36 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[668.165ms] [33m[rows:-][35m SELECT count(*) FROM information_schema.tables WHERE table_schema = 'service_manage' AND table_name = 'machines' AND table_type = 'BASE TABLE'[0m
+
+2026/05/14 10:56:36 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[277.564ms] [33m[rows:-][35m SELECT DATABASE()[0m
+
+2026/05/14 10:56:37 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[1102.004ms] [33m[rows:1][35m SELECT SCHEMA_NAME from Information_schema.SCHEMATA where SCHEMA_NAME LIKE 'service_manage%' ORDER BY SCHEMA_NAME='service_manage' DESC,SCHEMA_NAME limit 1[0m
+
+2026/05/14 10:56:39 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[1864.888ms] [33m[rows:-][35m SELECT * FROM `machines` LIMIT 1[0m
+
+2026/05/14 10:56:39 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[615.080ms] [33m[rows:-][35m SELECT column_name, column_default, is_nullable = 'YES', data_type, character_maximum_length, column_type, column_key, extra, column_comment, numeric_precision, numeric_scale , datetime_precision FROM information_schema.columns WHERE table_schema = 'service_manage' AND table_name = 'machines' ORDER BY ORDINAL_POSITION[0m
+
+2026/05/14 10:56:40 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[280.276ms] [33m[rows:-][35m SELECT DATABASE()[0m
+
+2026/05/14 10:56:40 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[417.928ms] [33m[rows:1][35m SELECT SCHEMA_NAME from Information_schema.SCHEMATA where SCHEMA_NAME LIKE 'service_manage%' ORDER BY SCHEMA_NAME='service_manage' DESC,SCHEMA_NAME limit 1[0m
+
+2026/05/14 10:56:41 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[426.169ms] [33m[rows:-][35m SELECT count(*) FROM information_schema.statistics WHERE table_schema = 'service_manage' AND table_name = 'machines' AND index_name = 'idx_machines_deleted_at'[0m
+
+2026/05/14 10:56:41 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[312.109ms] [33m[rows:-][35m SELECT DATABASE()[0m
+
+2026/05/14 10:56:41 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[458.740ms] [33m[rows:1][35m SELECT SCHEMA_NAME from Information_schema.SCHEMATA where SCHEMA_NAME LIKE 'service_manage%' ORDER BY SCHEMA_NAME='service_manage' DESC,SCHEMA_NAME limit 1[0m
+
+2026/05/14 10:56:42 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[347.983ms] [33m[rows:-][35m SELECT count(*) FROM information_schema.statistics WHERE table_schema = 'service_manage' AND table_name = 'machines' AND index_name = 'idx_machines_name'[0m
+
+2026/05/14 10:56:42 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[400.167ms] [33m[rows:-][35m SELECT DATABASE()[0m
+
+2026/05/14 10:56:42 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[422.357ms] [33m[rows:1][35m SELECT SCHEMA_NAME from Information_schema.SCHEMATA where SCHEMA_NAME LIKE 'service_manage%' ORDER BY SCHEMA_NAME='service_manage' DESC,SCHEMA_NAME limit 1[0m
+
+2026/05/14 10:56:43 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[319.229ms] [33m[rows:-][35m SELECT count(*) FROM information_schema.tables WHERE table_schema = 'service_manage' AND table_name = 'docker_services' AND table_type = 'BASE TABLE'[0m
+
+2026/05/14 10:56:43 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[385.351ms] [33m[rows:-][35m SELECT DATABASE()[0m
+
+2026/05/14 10:56:44 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[430.944ms] [33m[rows:1][35m SELECT SCHEMA_NAME from Information_schema.SCHEMATA where SCHEMA_NAME LIKE 'service_manage%' ORDER BY SCHEMA_NAME='service_manage' DESC,SCHEMA_NAME limit 1[0m
+
+2026/05/14 10:56:44 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[207.761ms] [33m[rows:-][35m SELECT * FROM `docker_services` LIMIT 1[0m
+
+2026/05/14 10:56:44 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[314.374ms] [33m[rows:-][35m SELECT column_name, column_default, is_nullable = 'YES', data_type, character_maximum_length, column_type, column_key, extra, column_comment, numeric_precision, numeric_scale , datetime_precision FROM information_schema.columns WHERE table_schema = 'service_manage' AND table_name = 'docker_services' ORDER BY ORDINAL_POSITION[0m
+
+2026/05/14 10:56:44 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[333.988ms] [33m[rows:0][35m ALTER TABLE `docker_services` MODIFY COLUMN `locked` boolean DEFAULT false[0m
+
+2026/05/14 10:56:45 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[246.101ms] [33m[rows:-][35m SELECT DATABASE()[0m
+
+2026/05/14 10:56:45 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[367.875ms] [33m[rows:1][35m SELECT SCHEMA_NAME from Information_schema.SCHEMATA where SCHEMA_NAME LIKE 'service_manage%' ORDER BY SCHEMA_NAME='service_manage' DESC,SCHEMA_NAME limit 1[0m
+
+2026/05/14 10:56:46 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[580.999ms] [33m[rows:-][35m SELECT count(*) FROM INFORMATION_SCHEMA.table_constraints WHERE constraint_schema = 'service_manage' AND table_name = 'docker_services' AND constraint_name = 'fk_docker_services_machine'[0m
+
+2026/05/14 10:56:46 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[228.476ms] [33m[rows:-][35m SELECT DATABASE()[0m
+
+2026/05/14 10:56:46 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[342.507ms] [33m[rows:1][35m SELECT SCHEMA_NAME from Information_schema.SCHEMATA where SCHEMA_NAME LIKE 'service_manage%' ORDER BY SCHEMA_NAME='service_manage' DESC,SCHEMA_NAME limit 1[0m
+
+2026/05/14 10:56:46 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[239.125ms] [33m[rows:-][35m SELECT count(*) FROM information_schema.statistics WHERE table_schema = 'service_manage' AND table_name = 'docker_services' AND index_name = 'idx_docker_services_machine_id'[0m
+
+2026/05/14 10:56:47 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[249.564ms] [33m[rows:-][35m SELECT DATABASE()[0m
+
+2026/05/14 10:56:47 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[468.279ms] [33m[rows:1][35m SELECT SCHEMA_NAME from Information_schema.SCHEMATA where SCHEMA_NAME LIKE 'service_manage%' ORDER BY SCHEMA_NAME='service_manage' DESC,SCHEMA_NAME limit 1[0m
+
+2026/05/14 10:56:48 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[498.400ms] [33m[rows:-][35m SELECT count(*) FROM information_schema.statistics WHERE table_schema = 'service_manage' AND table_name = 'docker_services' AND index_name = 'idx_docker_services_deleted_at'[0m
+
+2026/05/14 10:56:48 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[292.053ms] [33m[rows:-][35m SELECT DATABASE()[0m
+
+2026/05/14 10:56:48 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[233.773ms] [33m[rows:1][35m SELECT SCHEMA_NAME from Information_schema.SCHEMATA where SCHEMA_NAME LIKE 'service_manage%' ORDER BY SCHEMA_NAME='service_manage' DESC,SCHEMA_NAME limit 1[0m
+
+2026/05/14 10:56:49 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[313.902ms] [33m[rows:-][35m SELECT count(*) FROM information_schema.tables WHERE table_schema = 'service_manage' AND table_name = 'other_services' AND table_type = 'BASE TABLE'[0m
+
+2026/05/14 10:56:49 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[287.207ms] [33m[rows:-][35m SELECT DATABASE()[0m
+
+2026/05/14 10:56:49 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[390.416ms] [33m[rows:1][35m SELECT SCHEMA_NAME from Information_schema.SCHEMATA where SCHEMA_NAME LIKE 'service_manage%' ORDER BY SCHEMA_NAME='service_manage' DESC,SCHEMA_NAME limit 1[0m
+
+2026/05/14 10:56:49 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[230.984ms] [33m[rows:-][35m SELECT * FROM `other_services` LIMIT 1[0m
+
+2026/05/14 10:56:50 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[271.818ms] [33m[rows:-][35m SELECT column_name, column_default, is_nullable = 'YES', data_type, character_maximum_length, column_type, column_key, extra, column_comment, numeric_precision, numeric_scale , datetime_precision FROM information_schema.columns WHERE table_schema = 'service_manage' AND table_name = 'other_services' ORDER BY ORDINAL_POSITION[0m
+
+2026/05/14 10:56:50 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[219.357ms] [33m[rows:-][35m SELECT DATABASE()[0m
+
+2026/05/14 10:56:51 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[610.932ms] [33m[rows:1][35m SELECT SCHEMA_NAME from Information_schema.SCHEMATA where SCHEMA_NAME LIKE 'service_manage%' ORDER BY SCHEMA_NAME='service_manage' DESC,SCHEMA_NAME limit 1[0m
+
+2026/05/14 10:56:51 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[293.893ms] [33m[rows:-][35m SELECT count(*) FROM INFORMATION_SCHEMA.table_constraints WHERE constraint_schema = 'service_manage' AND table_name = 'other_services' AND constraint_name = 'fk_other_services_machine'[0m
+
+2026/05/14 10:56:51 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[260.235ms] [33m[rows:1][35m SELECT SCHEMA_NAME from Information_schema.SCHEMATA where SCHEMA_NAME LIKE 'service_manage%' ORDER BY SCHEMA_NAME='service_manage' DESC,SCHEMA_NAME limit 1[0m
+
+2026/05/14 10:56:52 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[341.658ms] [33m[rows:-][35m SELECT count(*) FROM information_schema.statistics WHERE table_schema = 'service_manage' AND table_name = 'other_services' AND index_name = 'idx_other_services_deleted_at'[0m
+
+2026/05/14 10:56:52 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[755.713ms] [33m[rows:-][35m SELECT DATABASE()[0m
+
+2026/05/14 10:56:53 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[537.180ms] [33m[rows:1][35m SELECT SCHEMA_NAME from Information_schema.SCHEMATA where SCHEMA_NAME LIKE 'service_manage%' ORDER BY SCHEMA_NAME='service_manage' DESC,SCHEMA_NAME limit 1[0m
+
+2026/05/14 10:56:53 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[430.523ms] [33m[rows:-][35m SELECT count(*) FROM information_schema.statistics WHERE table_schema = 'service_manage' AND table_name = 'other_services' AND index_name = 'idx_other_services_machine_id'[0m
+
+2026/05/14 10:56:54 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[225.708ms] [33m[rows:-][35m SELECT DATABASE()[0m
+
+2026/05/14 10:56:54 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[301.371ms] [33m[rows:1][35m SELECT SCHEMA_NAME from Information_schema.SCHEMATA where SCHEMA_NAME LIKE 'service_manage%' ORDER BY SCHEMA_NAME='service_manage' DESC,SCHEMA_NAME limit 1[0m
+
+2026/05/14 10:56:54 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[255.944ms] [33m[rows:-][35m SELECT count(*) FROM information_schema.tables WHERE table_schema = 'service_manage' AND table_name = 'egress_methods' AND table_type = 'BASE TABLE'[0m
+
+2026/05/14 10:56:55 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[334.226ms] [33m[rows:1][35m SELECT SCHEMA_NAME from Information_schema.SCHEMATA where SCHEMA_NAME LIKE 'service_manage%' ORDER BY SCHEMA_NAME='service_manage' DESC,SCHEMA_NAME limit 1[0m
+
+2026/05/14 10:56:55 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[336.433ms] [33m[rows:-][35m SELECT * FROM `egress_methods` LIMIT 1[0m
+
+2026/05/14 10:56:55 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[343.594ms] [33m[rows:-][35m SELECT column_name, column_default, is_nullable = 'YES', data_type, character_maximum_length, column_type, column_key, extra, column_comment, numeric_precision, numeric_scale , datetime_precision FROM information_schema.columns WHERE table_schema = 'service_manage' AND table_name = 'egress_methods' ORDER BY ORDINAL_POSITION[0m
+
+2026/05/14 10:56:56 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[290.225ms] [33m[rows:-][35m SELECT DATABASE()[0m
+
+2026/05/14 10:56:56 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[340.484ms] [33m[rows:1][35m SELECT SCHEMA_NAME from Information_schema.SCHEMATA where SCHEMA_NAME LIKE 'service_manage%' ORDER BY SCHEMA_NAME='service_manage' DESC,SCHEMA_NAME limit 1[0m
+
+2026/05/14 10:56:56 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[524.118ms] [33m[rows:-][35m SELECT count(*) FROM INFORMATION_SCHEMA.table_constraints WHERE constraint_schema = 'service_manage' AND table_name = 'egress_methods' AND constraint_name = 'fk_egress_methods_docker_service'[0m
+
+2026/05/14 10:56:57 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[209.295ms] [33m[rows:-][35m SELECT DATABASE()[0m
+
+2026/05/14 10:56:57 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[337.252ms] [33m[rows:1][35m SELECT SCHEMA_NAME from Information_schema.SCHEMATA where SCHEMA_NAME LIKE 'service_manage%' ORDER BY SCHEMA_NAME='service_manage' DESC,SCHEMA_NAME limit 1[0m
+
+2026/05/14 10:56:57 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[307.345ms] [33m[rows:-][35m SELECT count(*) FROM information_schema.statistics WHERE table_schema = 'service_manage' AND table_name = 'egress_methods' AND index_name = 'idx_egress_methods_deleted_at'[0m
+
+2026/05/14 10:56:58 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[700.477ms] [33m[rows:-][35m SELECT DATABASE()[0m
+
+2026/05/14 10:56:59 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[1009.943ms] [33m[rows:1][35m SELECT SCHEMA_NAME from Information_schema.SCHEMATA where SCHEMA_NAME LIKE 'service_manage%' ORDER BY SCHEMA_NAME='service_manage' DESC,SCHEMA_NAME limit 1[0m
+
+2026/05/14 10:57:00 [32mD:/GraduationProject/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[628.433ms] [33m[rows:-][35m SELECT count(*) FROM information_schema.statistics WHERE table_schema = 'service_manage' AND table_name = 'egress_methods' AND index_name = 'idx_egress_methods_service_id'[0m
+2026-05-14T10:57:00.185+0800	INFO	server/main.go:55	数据库表初始化完成
+[GIN-debug] [WARNING] Creating an Engine instance with the Logger and Recovery middleware already attached.
+
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] GET    /api/overview             --> service-manage/handler.(*MachineHandler).Overview-fm (4 handlers)
+[GIN-debug] GET    /api/machines             --> service-manage/handler.(*MachineHandler).List-fm (4 handlers)
+[GIN-debug] GET    /api/machines/:id         --> service-manage/handler.(*MachineHandler).Get-fm (4 handlers)
+[GIN-debug] POST   /api/machines             --> service-manage/handler.(*MachineHandler).Create-fm (4 handlers)
+[GIN-debug] PUT    /api/machines/:id         --> service-manage/handler.(*MachineHandler).Update-fm (4 handlers)
+[GIN-debug] DELETE /api/machines/:id         --> service-manage/handler.(*MachineHandler).Delete-fm (4 handlers)
+[GIN-debug] POST   /api/machines/:id/check-ssh --> service-manage/handler.(*MachineHandler).CheckSSH-fm (4 handlers)
+[GIN-debug] POST   /api/machines/:id/discover-services --> service-manage/handler.(*MachineHandler).DiscoverServices-fm (4 handlers)
+[GIN-debug] GET    /api/docker-services      --> service-manage/handler.(*DockerServiceHandler).List-fm (4 handlers)
+[GIN-debug] POST   /api/docker-services      --> service-manage/handler.(*DockerServiceHandler).Create-fm (4 handlers)
+[GIN-debug] PUT    /api/docker-services/:id  --> service-manage/handler.(*DockerServiceHandler).Update-fm (4 handlers)
+[GIN-debug] DELETE /api/docker-services/:id  --> service-manage/handler.(*DockerServiceHandler).Delete-fm (4 handlers)
+[GIN-debug] POST   /api/docker-services/:id/check --> service-manage/handler.(*DockerServiceHandler).Check-fm (4 handlers)
+[GIN-debug] GET    /api/other-services       --> service-manage/handler.(*OtherServiceHandler).List-fm (4 handlers)
+[GIN-debug] POST   /api/other-services       --> service-manage/handler.(*OtherServiceHandler).Create-fm (4 handlers)
+[GIN-debug] PUT    /api/other-services/:id   --> service-manage/handler.(*OtherServiceHandler).Update-fm (4 handlers)
+[GIN-debug] DELETE /api/other-services/:id   --> service-manage/handler.(*OtherServiceHandler).Delete-fm (4 handlers)
+[GIN-debug] GET    /api/egress-methods       --> service-manage/handler.(*EgressMethodHandler).List-fm (4 handlers)
+[GIN-debug] POST   /api/egress-methods       --> service-manage/handler.(*EgressMethodHandler).Create-fm (4 handlers)
+[GIN-debug] PUT    /api/egress-methods/:id   --> service-manage/handler.(*EgressMethodHandler).Update-fm (4 handlers)
+[GIN-debug] DELETE /api/egress-methods/:id   --> service-manage/handler.(*EgressMethodHandler).Delete-fm (4 handlers)
+2026-05-14T10:57:00.186+0800	INFO	server/main.go:60	服务启动于 :8080
+[GIN-debug] [WARNING] You trusted all proxies, this is NOT safe. We recommend you to set a value.
+Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.
+[GIN-debug] Listening and serving HTTP on :8080
+
+2026/05/14 10:57:15 [32mD:/GraduationProject/PokeServiceManage/server/handler/machine.go:207 [33mSLOW SQL >= 200ms
+[0m[31;1m[863.987ms] [33m[rows:1][35m SELECT count(*) FROM `machines` WHERE `machines`.`deleted_at` IS NULL[0m
+
+2026/05/14 10:57:15 [32mD:/GraduationProject/PokeServiceManage/server/handler/machine.go:208 [33mSLOW SQL >= 200ms
+[0m[31;1m[263.209ms] [33m[rows:1][35m SELECT count(*) FROM `machines` WHERE status = 1 AND `machines`.`deleted_at` IS NULL[0m
+
+2026/05/14 10:57:15 [32mD:/GraduationProject/PokeServiceManage/server/handler/machine.go:50 [33mSLOW SQL >= 200ms
+[0m[31;1m[241.614ms] [33m[rows:1][35m SELECT count(*) FROM `machines` WHERE `machines`.`deleted_at` IS NULL[0m
+
+2026/05/14 10:57:15 [32mD:/GraduationProject/PokeServiceManage/server/handler/machine.go:210 [33mSLOW SQL >= 200ms
+[0m[31;1m[245.139ms] [33m[rows:1][35m SELECT count(*) FROM `docker_services` WHERE `docker_services`.`deleted_at` IS NULL[0m
+
+2026/05/14 10:57:15 [32mD:/GraduationProject/PokeServiceManage/server/handler/machine.go:211 [33mSLOW SQL >= 200ms
+[0m[31;1m[224.109ms] [33m[rows:1][35m SELECT count(*) FROM `other_services` WHERE `other_services`.`deleted_at` IS NULL[0m
+
+2026/05/14 10:57:15 [32mD:/GraduationProject/PokeServiceManage/server/handler/machine.go:69 [33mSLOW SQL >= 200ms
+[0m[31;1m[230.501ms] [33m[rows:1][35m SELECT count(*) FROM `docker_services` WHERE machine_id = 2 AND `docker_services`.`deleted_at` IS NULL[0m
+
+2026/05/14 10:57:16 [32mD:/GraduationProject/PokeServiceManage/server/handler/machine.go:70 [33mSLOW SQL >= 200ms
+[0m[31;1m[214.866ms] [33m[rows:1][35m SELECT count(*) FROM `other_services` WHERE machine_id = 2 AND `other_services`.`deleted_at` IS NULL[0m
+
+2026/05/14 10:57:16 [32mD:/GraduationProject/PokeServiceManage/server/handler/machine.go:70 [33mSLOW SQL >= 200ms
+[0m[31;1m[406.801ms] [33m[rows:1][35m SELECT count(*) FROM `other_services` WHERE machine_id = 1 AND `other_services`.`deleted_at` IS NULL[0m
+
+2026/05/14 10:57:16 [32mD:/GraduationProject/PokeServiceManage/server/handler/machine.go:230 [33mSLOW SQL >= 200ms
+[0m[31;1m[406.801ms] [33m[rows:1][35m SELECT count(*) FROM `docker_services` WHERE machine_id = 2 AND `docker_services`.`deleted_at` IS NULL[0m
+[GIN] 2026/05/14 - 10:57:16 | 200 |    1.4801161s |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+
+2026/05/14 10:57:16 [32mD:/GraduationProject/PokeServiceManage/server/handler/machine.go:231 [33mSLOW SQL >= 200ms
+[0m[31;1m[226.823ms] [33m[rows:1][35m SELECT count(*) FROM `other_services` WHERE machine_id = 2 AND `other_services`.`deleted_at` IS NULL[0m
+
+2026/05/14 10:57:17 [32mD:/GraduationProject/PokeServiceManage/server/handler/machine.go:230 [33mSLOW SQL >= 200ms
+[0m[31;1m[230.359ms] [33m[rows:1][35m SELECT count(*) FROM `docker_services` WHERE machine_id = 1 AND `docker_services`.`deleted_at` IS NULL[0m
+
+2026/05/14 10:57:17 [32mD:/GraduationProject/PokeServiceManage/server/handler/machine.go:231 [33mSLOW SQL >= 200ms
+[0m[31;1m[210.106ms] [33m[rows:1][35m SELECT count(*) FROM `other_services` WHERE machine_id = 1 AND `other_services`.`deleted_at` IS NULL[0m
+[GIN] 2026/05/14 - 10:57:17 | 200 |    3.1619512s |             ::1 | GET      "/api/overview"
+^C

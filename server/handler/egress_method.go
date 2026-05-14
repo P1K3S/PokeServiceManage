@@ -21,7 +21,7 @@ func (h *EgressMethodHandler) List(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "10"))
 	serviceIDStr := c.Query("serviceId")
-	methodType := c.Query("methodType")
+	isDirectStr := c.Query("isDirect")
 	statusStr := c.Query("status")
 
 	query := h.DB.Model(&model.EgressMethod{}).
@@ -33,8 +33,10 @@ func (h *EgressMethodHandler) List(c *gin.Context) {
 		serviceID, _ := strconv.Atoi(serviceIDStr)
 		query = query.Where("service_id = ?", serviceID)
 	}
-	if methodType != "" {
-		query = query.Where("method_type = ?", methodType)
+	if isDirectStr == "true" {
+		query = query.Where("is_direct = ?", true)
+	} else if isDirectStr == "false" {
+		query = query.Where("is_direct = ?", false)
 	}
 	if statusStr != "" {
 		status, _ := strconv.Atoi(statusStr)
@@ -53,25 +55,51 @@ func (h *EgressMethodHandler) List(c *gin.Context) {
 
 	type EgressMethodVO struct {
 		model.EgressMethod
-		ServiceName string `json:"serviceName"`
-		MachineName string `json:"machineName"`
+		ServiceName       string `json:"serviceName"`
+		MachineName       string `json:"machineName"`
+		EgressServiceName string `json:"egressServiceName"`
 	}
 
 	var result []EgressMethodVO
 	for _, m := range methods {
 		serviceName := ""
 		machineName := ""
-		if m.DockerService.ID != 0 {
-			serviceName = m.DockerService.Name
-			var machine model.Machine
-			if err := h.DB.Unscoped().First(&machine, m.DockerService.MachineID).Error; err == nil {
-				machineName = machine.Name
+		egressServiceName := ""
+		if m.ServiceType == "other" {
+			var otherService model.OtherService
+			if err := h.DB.Unscoped().First(&otherService, m.ServiceID).Error; err == nil {
+				serviceName = otherService.Name
+				var machine model.Machine
+				if err := h.DB.Unscoped().First(&machine, otherService.MachineID).Error; err == nil {
+					machineName = machine.Name
+				}
+			}
+		} else {
+			if m.DockerService.ID != 0 {
+				serviceName = m.DockerService.Name
+				var machine model.Machine
+				if err := h.DB.Unscoped().First(&machine, m.DockerService.MachineID).Error; err == nil {
+					machineName = machine.Name
+				}
+			}
+		}
+		if m.IsDirect {
+			egressServiceName = "本机直连"
+		} else if m.EgressServiceID > 0 {
+			var egressService model.DockerService
+			if err := h.DB.Unscoped().First(&egressService, m.EgressServiceID).Error; err == nil {
+				egressServiceName = egressService.Name
+				var egressMachine model.Machine
+				if err := h.DB.Unscoped().First(&egressMachine, egressService.MachineID).Error; err == nil {
+					egressServiceName = egressService.Name + "-" + egressMachine.Name
+				}
 			}
 		}
 		result = append(result, EgressMethodVO{
-			EgressMethod: m,
-			ServiceName:  serviceName,
-			MachineName:  machineName,
+			EgressMethod:      m,
+			ServiceName:       serviceName,
+			MachineName:       machineName,
+			EgressServiceName: egressServiceName,
 		})
 	}
 
@@ -85,9 +113,41 @@ func (h *EgressMethodHandler) Create(c *gin.Context) {
 		return
 	}
 
-	var dockerService model.DockerService
-	if err := h.DB.First(&dockerService, method.ServiceID).Error; err != nil {
-		jsonError(c, "所属Docker服务不存在")
+	var serviceMachineID uint
+	if method.ServiceType == "other" {
+		var otherService model.OtherService
+		if err := h.DB.First(&otherService, method.ServiceID).Error; err != nil {
+			jsonError(c, "所属服务不存在")
+			return
+		}
+		serviceMachineID = otherService.MachineID
+	} else {
+		var dockerService model.DockerService
+		if err := h.DB.First(&dockerService, method.ServiceID).Error; err != nil {
+			jsonError(c, "所属服务不存在")
+			return
+		}
+		serviceMachineID = dockerService.MachineID
+	}
+
+	if method.IsDirect {
+		var machine model.Machine
+		if err := h.DB.First(&machine, serviceMachineID).Error; err != nil {
+			jsonError(c, "所属主机不存在")
+			return
+		}
+	} else if method.EgressServiceID > 0 {
+		var egressService model.DockerService
+		if err := h.DB.First(&egressService, method.EgressServiceID).Error; err != nil {
+			jsonError(c, "出站服务不存在")
+			return
+		}
+		if !egressService.IsEgress {
+			jsonError(c, "所选服务不是出站服务")
+			return
+		}
+	} else {
+		jsonError(c, "请选择出站服务")
 		return
 	}
 

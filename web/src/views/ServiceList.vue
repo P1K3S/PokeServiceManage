@@ -30,9 +30,9 @@
       </el-form>
 
       <el-table :data="list" stripe border v-loading="loading" style="width: 100%">
-        <el-table-column prop="name" label="服务名称" min-width="140" show-overflow-tooltip />
-        <el-table-column prop="machineName" label="所属主机" width="140" show-overflow-tooltip />
-        <el-table-column label="源IP" width="130">
+        <el-table-column prop="name" label="服务名称" min-width="140" show-overflow-tooltip align="center" />
+        <el-table-column prop="machineName" label="所属主机" width="140" show-overflow-tooltip align="center" />
+        <el-table-column label="源IP" width="130" align="center">
           <template #default="{ row }">
             {{ row.dockerSourceIp || '-' }}
           </template>
@@ -56,8 +56,8 @@
           </template>
         </el-table-column>
         <el-table-column prop="egressCount" label="出站" width="65" align="center" />
-        <el-table-column prop="remark" label="备注" min-width="140" show-overflow-tooltip />
-        <el-table-column label="操作" width="280">
+        <el-table-column prop="remark" label="备注" min-width="140" show-overflow-tooltip align="center" />
+        <el-table-column label="操作" width="220" align="center">
           <template #default="{ row }">
             <el-button type="info" link size="small" @click="viewDetail(row)">查看</el-button>
             <el-button type="primary" link size="small" @click="openForm('edit', row)">编辑</el-button>
@@ -104,9 +104,9 @@
         <el-divider content-position="left">端口映射</el-divider>
         <el-form-item label="端口1">
           <div style="display: flex; align-items: center; gap: 6px; width: 100%">
-            <el-input-number v-model="form.port" :min="1" :max="65535" style="width: 130px" placeholder="宿主机" />
+            <el-input-number v-model="form.port" :min="0" :max="65535" style="width: 130px" placeholder="宿主机" />
             <span>→</span>
-            <el-input-number v-model="form.dockerSourcePort" :min="1" :max="65535" style="width: 130px" placeholder="容器" />
+            <el-input-number v-model="form.dockerSourcePort" :min="0" :max="65535" style="width: 130px" placeholder="容器" />
             <el-select v-model="form.protocol" style="width: 90px">
               <el-option label="TCP" value="TCP" />
               <el-option label="UDP" value="UDP" />
@@ -116,9 +116,9 @@
         <template v-for="(pair, idx) in portPairs" :key="idx">
           <el-form-item :label="'端口' + (idx + 2)">
             <div style="display: flex; align-items: center; gap: 6px; width: 100%">
-              <el-input-number v-model="pair.hostPort" :min="1" :max="65535" style="width: 130px" placeholder="宿主机" />
+              <el-input-number v-model="pair.hostPort" :min="0" :max="65535" style="width: 130px" placeholder="宿主机" />
               <span>→</span>
-              <el-input-number v-model="pair.containerPort" :min="1" :max="65535" style="width: 130px" placeholder="容器" />
+              <el-input-number v-model="pair.containerPort" :min="0" :max="65535" style="width: 130px" placeholder="容器" />
               <el-select v-model="pair.protocol" style="width: 90px">
                 <el-option label="TCP" value="TCP" />
                 <el-option label="UDP" value="UDP" />
@@ -132,6 +132,9 @@
         </el-form-item>
         <el-form-item label="状态">
           <el-switch v-model="form.status" :active-value="1" :inactive-value="0" active-text="运行中" inactive-text="已停止" />
+        </el-form-item>
+        <el-form-item label="出站服务">
+          <el-switch v-model="form.isEgress" active-text="是" inactive-text="否" />
         </el-form-item>
         <el-form-item label="备注">
           <el-input v-model="form.remark" type="textarea" :rows="2" />
@@ -161,6 +164,11 @@
           <el-descriptions-item label="状态">
             <el-tag :type="detailData.status === 1 ? 'primary' : 'info'" size="small">
               {{ detailData.status === 1 ? '运行中' : '已停止' }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="出站服务">
+            <el-tag :type="detailData.isEgress ? 'success' : 'info'" size="small">
+              {{ detailData.isEgress ? '是' : '否' }}
             </el-tag>
           </el-descriptions-item>
           <el-descriptions-item label="备注">{{ detailData.remark || '-' }}</el-descriptions-item>
@@ -201,7 +209,7 @@ const portPairs = ref([])
 
 const form = reactive({
   machineId: null, name: '', port: 80, protocol: 'TCP',
-  dockerSourceIp: '', dockerSourcePort: null, status: 1, remark: ''
+  dockerSourceIp: '', dockerSourcePort: null, status: 1, isEgress: false, remark: ''
 })
 
 const rules = {
@@ -239,7 +247,7 @@ const openForm = (mode, row) => {
       machineId: row.machineId, name: row.name,
       port: row.port, protocol: row.protocol || 'TCP',
       dockerSourceIp: row.dockerSourceIp || '', dockerSourcePort: row.dockerSourcePort || null,
-      status: row.status, remark: row.remark || ''
+      status: row.status, isEgress: row.isEgress || false, remark: row.remark || ''
     })
     if (row.portMappings) {
       try {
@@ -255,7 +263,7 @@ const openForm = (mode, row) => {
     }
   } else {
     editId.value = null
-    Object.assign(form, { machineId: null, name: '', port: 80, protocol: 'TCP', dockerSourceIp: '', dockerSourcePort: null, status: 1, remark: '' })
+    Object.assign(form, { machineId: null, name: '', port: 80, protocol: 'TCP', dockerSourceIp: '', dockerSourcePort: null, status: 1, isEgress: false, remark: '' })
   }
 }
 

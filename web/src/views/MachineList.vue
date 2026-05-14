@@ -35,8 +35,8 @@
         <el-table-column type="expand" width="40">
           <template #default="{ row }">
             <el-table :data="row._services" stripe border size="small" v-if="row._services && row._services.length > 0">
-              <el-table-column prop="name" label="服务名称" />
-              <el-table-column prop="type" label="类型" width="100" />
+              <el-table-column prop="name" label="服务名称" align="center" />
+              <el-table-column prop="type" label="类型" width="100" align="center" />
               <el-table-column prop="port" label="端口" width="80" align="center" />
               <el-table-column prop="protocol" label="协议" width="70" align="center" />
               <el-table-column label="状态" width="70" align="center">
@@ -50,18 +50,18 @@
             <el-empty description="暂无服务" v-else />
           </template>
         </el-table-column>
-        <el-table-column prop="name" label="主机名称" min-width="140" />
-        <el-table-column prop="ip" label="IP地址" width="150" />
-        <el-table-column label="类型" width="90">
+        <el-table-column prop="name" label="主机名称" min-width="140" align="center" />
+        <el-table-column prop="ip" label="IP地址" width="150" align="center" />
+        <el-table-column label="类型" width="90" align="center">
           <template #default="{ row }">
             <el-tag :type="row.machineType === 'CLOUD' ? '' : 'success'" size="small">
               {{ row.machineType === 'CLOUD' ? '云服务器' : '局域网' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="cpu" label="CPU" min-width="120" />
-        <el-table-column prop="memory" label="内存" width="80" />
-        <el-table-column prop="os" label="操作系统" min-width="120" />
+        <el-table-column prop="cpu" label="CPU" min-width="120" align="center" />
+        <el-table-column prop="memory" label="内存" width="80" align="center" />
+        <el-table-column prop="os" label="操作系统" min-width="120" align="center" />
         <el-table-column label="状态" width="70" align="center">
           <template #default="{ row }">
             <el-tag :type="row.status === 1 ? 'success' : 'danger'" size="small">
@@ -70,7 +70,7 @@
           </template>
         </el-table-column>
         <el-table-column prop="serviceCount" label="服务数" width="70" align="center" />
-        <el-table-column label="操作" width="170">
+        <el-table-column label="操作" width="170" align="center">
           <template #default="{ row }">
             <el-button type="primary" link size="small" @click="openForm('edit', row)">编辑</el-button>
             <el-button type="danger" link size="small" @click="handleDelete(row)">删除</el-button>
@@ -144,6 +144,7 @@
 import { reactive, ref, onMounted } from 'vue'
 import { getMachines, createMachine, updateMachine, deleteMachine, checkMachineSSH, discoverMachineServices } from '../api/machine'
 import { getServices } from '../api/service'
+import { getOtherServices } from '../api/otherService'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const list = ref([])
@@ -186,8 +187,13 @@ const fetchData = async () => {
 const onExpandChange = async (row) => {
   if (row._services) return
   try {
-    const res = await getServices({ machineId: row.id, page: 1, pageSize: 100 })
-    row._services = res.data.list
+    const [dockerRes, otherRes] = await Promise.all([
+      getServices({ machineId: row.id, page: 1, pageSize: 100 }),
+      getOtherServices({ machineId: row.id, page: 1, pageSize: 100 })
+    ])
+    const dockerServices = (dockerRes.data.list || []).map(s => ({ ...s, type: 'Docker' }))
+    const otherServices = (otherRes.data.list || []).map(s => ({ ...s, type: '其他' }))
+    row._services = [...dockerServices, ...otherServices]
   } catch {
     row._services = []
   }

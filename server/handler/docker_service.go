@@ -2,15 +2,13 @@ package handler
 
 import (
 	"fmt"
-	"net"
 	"strconv"
 	"strings"
-	"time"
 
 	"service-manage/model"
+	sshutil "service-manage/utils/ssh"
 
 	"github.com/gin-gonic/gin"
-	"golang.org/x/crypto/ssh"
 	"gorm.io/gorm"
 )
 
@@ -51,7 +49,7 @@ func (h *DockerServiceHandler) List(c *gin.Context) {
 
 	var services []model.DockerService
 	offset := (page - 1) * pageSize
-	if err := query.Offset(offset).Limit(pageSize).Order("id DESC").Find(&services).Error; err != nil {
+	if err := query.Offset(offset).Limit(pageSize).Order("port ASC").Find(&services).Error; err != nil {
 		jsonError(c, "查询服务列表失败")
 		return
 	}
@@ -59,6 +57,7 @@ func (h *DockerServiceHandler) List(c *gin.Context) {
 	type DockerServiceVO struct {
 		model.DockerService
 		MachineName string `json:"machineName"`
+		MachineIP   string `json:"machineIp"`
 		EgressCount int64  `json:"egressCount"`
 	}
 
@@ -67,12 +66,15 @@ func (h *DockerServiceHandler) List(c *gin.Context) {
 		var egressCount int64
 		h.DB.Model(&model.EgressMethod{}).Where("service_id = ?", s.ID).Count(&egressCount)
 		machineName := ""
+		machineIP := ""
 		if s.Machine.ID != 0 {
 			machineName = s.Machine.Name
+			machineIP = s.Machine.IP
 		}
 		result = append(result, DockerServiceVO{
 			DockerService: s,
 			MachineName:   machineName,
+			MachineIP:     machineIP,
 			EgressCount:   egressCount,
 		})
 	}
@@ -148,29 +150,6 @@ func (h *DockerServiceHandler) Delete(c *gin.Context) {
 	jsonSuccess(c, nil)
 }
 
-func runSSHCommand(ip string, port int, user, password, cmd string) (string, error) {
-	config := &ssh.ClientConfig{
-		User: user,
-		Auth: []ssh.AuthMethod{
-			ssh.Password(password),
-		},
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-		Timeout:         5 * time.Second,
-	}
-	client, err := ssh.Dial("tcp", net.JoinHostPort(ip, strconv.Itoa(port)), config)
-	if err != nil {
-		return "", err
-	}
-	defer client.Close()
-	session, err := client.NewSession()
-	if err != nil {
-		return "", err
-	}
-	defer session.Close()
-	output, err := session.CombinedOutput(cmd)
-	return string(output), err
-}
-
 func (h *DockerServiceHandler) Check(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	var service model.DockerService
@@ -192,7 +171,12 @@ func (h *DockerServiceHandler) Check(c *gin.Context) {
 		sshPort = 22
 	}
 	cmd := fmt.Sprintf("docker ps --format '{{.Names}}' | grep -i %s", service.Name)
-	output, err := runSSHCommand(machine.IP, sshPort, machine.SSHUser, machine.SSHPassword, cmd)
+	output, err := sshutil.RunCommand(&sshutil.Config{
+		Host:     machine.IP,
+		Port:     sshPort,
+		User:     machine.SSHUser,
+		Password: machine.SSHPassword,
+	}, cmd)
 	newStatus := int8(0)
 	msg := "Docker 容器未运行"
 	if err == nil && strings.TrimSpace(output) != "" {

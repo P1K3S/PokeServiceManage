@@ -54,17 +54,21 @@ func (h *OtherServiceHandler) List(c *gin.Context) {
 	type OtherServiceVO struct {
 		model.OtherService
 		MachineName string `json:"machineName"`
+		MachineIP   string `json:"machineIp"`
 	}
 
 	var result []OtherServiceVO
 	for _, s := range services {
 		machineName := ""
+		machineIP := ""
 		if s.Machine.ID != 0 {
 			machineName = s.Machine.Name
+			machineIP = s.Machine.IP
 		}
 		result = append(result, OtherServiceVO{
 			OtherService: s,
 			MachineName:  machineName,
+			MachineIP:    machineIP,
 		})
 	}
 

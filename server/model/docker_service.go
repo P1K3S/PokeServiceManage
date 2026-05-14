@@ -11,6 +11,7 @@ type DockerService struct {
 	PortMappings     string `gorm:"type:text" json:"portMappings"`
 	Status           int8   `gorm:"default:1" json:"status"`
 	Locked           bool   `gorm:"default:false" json:"locked"`
+	IsEgress         bool   `gorm:"default:false" json:"isEgress"`
 	Remark           string `gorm:"type:text" json:"remark"`
 
 	Machine Machine `gorm:"foreignKey:MachineID" json:"machine,omitempty"`
