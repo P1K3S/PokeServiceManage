@@ -1,0 +1,12 @@
+﻿go : go: github.com/bytedance/sonic@v1.9.1: Get "https://proxy.golang.org/githu
+b.com/bytedance/sonic/@v/v1.9.1.mod": dial tcp 142.251.33.209:443: connectex: A
+ connection attempt failed because the connected party did not properly respond
+ after a period of time, or established connection failed because connected hos
+t has failed to respond.
+所在位置 行:1 字符: 48
++ ... OSUMCHECK="*"; $env:GONOSUMDB="*"; go mod download -json 2>&1 | Out-F ...
++                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (go: github.com/...led to respond. 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 

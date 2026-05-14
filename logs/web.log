@@ -1,0 +1,55 @@
+
+> service-manage-web@1.0.0 dev
+> vite
+
+
+  VITE v8.0.12  ready in 155 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+  ➜  press h + enter to show help
+03:02:45 [vite] http proxy error: /api/docker-services?page=1&pageSize=10&keyword=&machineId=&status=
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1193:18)
+    at afterConnectMultiple (node:net:1783:7)
+03:02:45 [vite] http proxy error: /api/machines?page=1&pageSize=200
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1193:18)
+    at afterConnectMultiple (node:net:1783:7)
+03:03:00 [vite] http proxy error: /api/machines?page=1&pageSize=10&keyword=&machineType=&status=
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1193:18)
+    at afterConnectMultiple (node:net:1783:7)
+03:03:00 [vite] http proxy error: /api/other-services?page=1&pageSize=10&keyword=&machineId=&status=
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1193:18)
+    at afterConnectMultiple (node:net:1783:7)
+03:03:00 [vite] http proxy error: /api/machines?page=1&pageSize=200
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1193:18)
+    at afterConnectMultiple (node:net:1783:7)
+03:03:01 [vite] http proxy error: /api/other-services?page=1&pageSize=10&keyword=&machineId=&status=
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1193:18)
+    at afterConnectMultiple (node:net:1783:7)
+03:03:01 [vite] http proxy error: /api/machines?page=1&pageSize=200
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1193:18)
+    at afterConnectMultiple (node:net:1783:7)
+03:04:51 [vite] (client) hmr update /src/views/MachineList.vue
+03:10:12 [vite] (client) hmr update /src/App.vue?vue&type=style&index=1&lang.css
+03:12:07 [vite] (client) hmr update /src/views/ServiceList.vue
+03:12:19 [vite] (client) hmr update /src/views/MachineList.vue
+03:12:23 [vite] (client) hmr update /src/views/OtherServiceList.vue
+03:12:25 [vite] (client) hmr update /src/views/EgressList.vue
+
+> service-manage-web@1.0.0 dev
+> vite
+
+
+  VITE v8.0.12  ready in 246 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+  ➜  press h + enter to show help
+09:30:13 [vite] (client) hmr update /src/views/Dashboard.vue

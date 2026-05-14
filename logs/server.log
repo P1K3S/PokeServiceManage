@@ -1,0 +1,254 @@
+2026-05-14T03:03:05.525+0800	INFO	server/main.go:55	数据库表初始化完成
+[GIN-debug] [WARNING] Creating an Engine instance with the Logger and Recovery middleware already attached.
+
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] GET    /api/overview             --> service-manage/handler.(*MachineHandler).Overview-fm (4 handlers)
+[GIN-debug] GET    /api/machines             --> service-manage/handler.(*MachineHandler).List-fm (4 handlers)
+[GIN-debug] GET    /api/machines/:id         --> service-manage/handler.(*MachineHandler).Get-fm (4 handlers)
+[GIN-debug] POST   /api/machines             --> service-manage/handler.(*MachineHandler).Create-fm (4 handlers)
+[GIN-debug] PUT    /api/machines/:id         --> service-manage/handler.(*MachineHandler).Update-fm (4 handlers)
+[GIN-debug] DELETE /api/machines/:id         --> service-manage/handler.(*MachineHandler).Delete-fm (4 handlers)
+[GIN-debug] POST   /api/machines/:id/check-ssh --> service-manage/handler.(*MachineHandler).CheckSSH-fm (4 handlers)
+[GIN-debug] POST   /api/machines/:id/discover-services --> service-manage/handler.(*MachineHandler).DiscoverServices-fm (4 handlers)
+[GIN-debug] GET    /api/docker-services      --> service-manage/handler.(*DockerServiceHandler).List-fm (4 handlers)
+[GIN-debug] POST   /api/docker-services      --> service-manage/handler.(*DockerServiceHandler).Create-fm (4 handlers)
+[GIN-debug] PUT    /api/docker-services/:id  --> service-manage/handler.(*DockerServiceHandler).Update-fm (4 handlers)
+[GIN-debug] DELETE /api/docker-services/:id  --> service-manage/handler.(*DockerServiceHandler).Delete-fm (4 handlers)
+[GIN-debug] POST   /api/docker-services/:id/check --> service-manage/handler.(*DockerServiceHandler).Check-fm (4 handlers)
+[GIN-debug] GET    /api/other-services       --> service-manage/handler.(*OtherServiceHandler).List-fm (4 handlers)
+[GIN-debug] POST   /api/other-services       --> service-manage/handler.(*OtherServiceHandler).Create-fm (4 handlers)
+[GIN-debug] PUT    /api/other-services/:id   --> service-manage/handler.(*OtherServiceHandler).Update-fm (4 handlers)
+[GIN-debug] DELETE /api/other-services/:id   --> service-manage/handler.(*OtherServiceHandler).Delete-fm (4 handlers)
+[GIN-debug] GET    /api/egress-methods       --> service-manage/handler.(*EgressMethodHandler).List-fm (4 handlers)
+[GIN-debug] POST   /api/egress-methods       --> service-manage/handler.(*EgressMethodHandler).Create-fm (4 handlers)
+[GIN-debug] PUT    /api/egress-methods/:id   --> service-manage/handler.(*EgressMethodHandler).Update-fm (4 handlers)
+[GIN-debug] DELETE /api/egress-methods/:id   --> service-manage/handler.(*EgressMethodHandler).Delete-fm (4 handlers)
+2026-05-14T03:03:05.535+0800	INFO	server/main.go:60	服务启动于 :8080
+[GIN-debug] [WARNING] You trusted all proxies, this is NOT safe. We recommend you to set a value.
+Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.
+[GIN-debug] Listening and serving HTTP on :8080
+[GIN] 2026/05/14 - 03:03:30 | 200 |      7.0713ms |             ::1 | GET      "/api/other-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 03:03:30 | 200 |     18.8195ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 03:03:31 | 200 |      5.6499ms |             ::1 | GET      "/api/other-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 03:03:31 | 200 |     18.3366ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 03:03:31 | 200 |      21.177ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 03:03:31 | 200 |     30.7468ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 03:03:33 | 200 |     28.5075ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 03:03:37 | 200 |     26.9738ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 03:03:38 | 200 |     17.3299ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 03:03:38 | 200 |     25.3445ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 03:03:48 | 200 |     20.0362ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 03:03:52 | 200 |      7.3401ms |             ::1 | GET      "/api/other-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 03:03:52 | 200 |     18.3154ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 03:03:52 | 200 |      6.6272ms |             ::1 | GET      "/api/egress-methods?page=1&pageSize=10&serviceId=&methodType=&status="
+[GIN] 2026/05/14 - 03:03:52 | 200 |     27.8254ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=200"
+[GIN] 2026/05/14 - 03:03:52 | 200 |      6.7403ms |             ::1 | GET      "/api/other-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 03:03:52 | 200 |     18.8284ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 03:03:53 | 200 |      6.8534ms |             ::1 | GET      "/api/egress-methods?page=1&pageSize=10&serviceId=&methodType=&status="
+[GIN] 2026/05/14 - 03:03:53 | 200 |     27.2487ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=200"
+[GIN] 2026/05/14 - 03:03:58 | 200 |      3.5827ms |             ::1 | GET      "/api/other-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 03:03:58 | 200 |     10.3408ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 03:04:01 | 200 |     20.2596ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 03:04:01 | 200 |     29.1141ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 03:04:01 | 200 |      6.8325ms |             ::1 | GET      "/api/other-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 03:04:01 | 200 |     18.3265ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 03:04:02 | 200 |     13.6609ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 03:04:02 | 200 |     19.2702ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 03:04:03 | 200 |      29.039ms |             ::1 | GET      "/api/overview"
+[GIN] 2026/05/14 - 03:04:04 | 200 |     20.5448ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 03:04:27 | 200 |      19.151ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 03:04:27 | 200 |     27.6826ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 03:04:30 | 200 |     17.7314ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 03:04:30 | 200 |     19.4514ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 03:04:30 | 200 |     28.6638ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 03:04:33 | 200 |    924.1805ms |             ::1 | POST     "/api/docker-services/6/check"
+[GIN] 2026/05/14 - 03:04:33 | 200 |     221.993ms |             ::1 | POST     "/api/docker-services/5/check"
+[GIN] 2026/05/14 - 03:04:33 | 200 |    208.9913ms |             ::1 | POST     "/api/docker-services/4/check"
+[GIN] 2026/05/14 - 03:04:33 | 200 |    208.9833ms |             ::1 | POST     "/api/docker-services/3/check"
+[GIN] 2026/05/14 - 03:04:33 | 200 |    201.8457ms |             ::1 | POST     "/api/docker-services/2/check"
+[GIN] 2026/05/14 - 03:04:34 | 200 |    388.0295ms |             ::1 | POST     "/api/docker-services/1/check"
+[GIN] 2026/05/14 - 03:04:34 | 200 |     24.7367ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 03:04:37 | 200 |     19.0328ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 03:04:41 | 200 |      6.8771ms |             ::1 | GET      "/api/other-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 03:04:41 | 200 |     19.8588ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 03:04:42 | 200 |     19.3664ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 03:04:42 | 200 |     27.6032ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 03:04:44 | 200 |     23.6847ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 03:04:45 | 200 |     25.6481ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 03:05:50 | 200 |     20.0819ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 03:05:51 | 200 |     17.3762ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 03:05:51 | 200 |     25.7735ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 03:05:51 | 200 |    737.6731ms |             ::1 | POST     "/api/machines/2/discover-services"
+[GIN] 2026/05/14 - 03:05:52 | 200 |    778.7609ms |             ::1 | POST     "/api/machines/1/discover-services"
+[GIN] 2026/05/14 - 03:05:52 | 200 |     15.6647ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 03:05:54 | 200 |     26.0389ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 03:05:55 | 200 |     24.8646ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 03:06:28 | 200 |     17.9088ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 03:06:31 | 200 |    789.1544ms |             ::1 | POST     "/api/machines/2/discover-services"
+[GIN] 2026/05/14 - 03:06:31 | 200 |     16.5856ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 03:06:31 | 200 |     23.1098ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 03:06:32 | 200 |    768.0073ms |             ::1 | POST     "/api/machines/1/discover-services"
+[GIN] 2026/05/14 - 03:06:32 | 200 |      15.555ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 03:06:33 | 200 |     24.8904ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 03:06:34 | 200 |     25.8624ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 03:06:35 | 200 |     25.8618ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 03:07:35 | 200 |     83.7832ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 03:07:36 | 200 |     23.0963ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 03:07:37 | 200 |     19.8115ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 03:07:37 | 200 |     29.0702ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 03:07:38 | 200 |    822.1774ms |             ::1 | POST     "/api/machines/2/discover-services"
+[GIN] 2026/05/14 - 03:07:39 | 200 |    1.0472323s |             ::1 | POST     "/api/machines/1/discover-services"
+[GIN] 2026/05/14 - 03:07:39 | 200 |     17.4153ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+
+2026/05/14 03:08:56 [32mC:/Users/Poke/Documents/trae_projects/PokeServiceManage/server/handler/machine.go:51 [33mSLOW SQL >= 200ms
+[0m[31;1m[589.863ms] [33m[rows:1][35m SELECT count(*) FROM `machines` WHERE `machines`.`deleted_at` IS NULL[0m
+[GIN] 2026/05/14 - 03:08:56 | 200 |    607.3363ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 03:08:56 | 200 |     14.6961ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 03:08:58 | 200 |    875.0277ms |             ::1 | POST     "/api/machines/2/discover-services"
+[GIN] 2026/05/14 - 03:08:59 | 200 |    974.7983ms |             ::1 | POST     "/api/machines/1/discover-services"
+[GIN] 2026/05/14 - 03:08:59 | 200 |     18.0295ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 03:09:00 | 200 |     19.7835ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 03:09:00 | 200 |     27.9671ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 03:10:29 | 200 |     22.1209ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 03:10:29 | 200 |     31.3629ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 03:10:32 | 200 |     19.3999ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 03:10:37 | 200 |      6.4843ms |             ::1 | GET      "/api/other-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 03:10:37 | 200 |     18.6303ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 03:10:44 | 200 |     54.9468ms |             ::1 | POST     "/api/other-services"
+[GIN] 2026/05/14 - 03:10:44 | 200 |      8.4705ms |             ::1 | GET      "/api/other-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 03:10:46 | 200 |      11.013ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 03:10:46 | 200 |     15.1707ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 03:10:48 | 200 |     10.8342ms |             ::1 | GET      "/api/other-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 03:10:48 | 200 |     20.0971ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 03:10:49 | 200 |      5.2074ms |             ::1 | GET      "/api/egress-methods?page=1&pageSize=10&serviceId=&methodType=&status="
+[GIN] 2026/05/14 - 03:10:49 | 200 |     18.1844ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=200"
+[GIN] 2026/05/14 - 03:10:55 | 200 |     50.1718ms |             ::1 | POST     "/api/egress-methods"
+[GIN] 2026/05/14 - 03:10:55 | 200 |     12.1047ms |             ::1 | GET      "/api/egress-methods?page=1&pageSize=10&serviceId=&methodType=&status="
+[GIN] 2026/05/14 - 03:17:07 | 200 |     12.2068ms |             ::1 | GET      "/api/egress-methods?page=1&pageSize=10&serviceId=&methodType=&status="
+[GIN] 2026/05/14 - 03:17:07 | 200 |     26.2362ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=200"
+[GIN] 2026/05/14 - 03:17:16 | 200 |     12.2089ms |             ::1 | GET      "/api/egress-methods?page=1&pageSize=10&serviceId=&methodType=&status="
+[GIN] 2026/05/14 - 03:17:16 | 200 |     26.4506ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=200"
+[GIN] 2026/05/14 - 03:17:18 | 200 |     26.9604ms |             ::1 | GET      "/api/overview"
+[GIN] 2026/05/14 - 03:17:19 | 200 |     17.6707ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 03:17:20 | 200 |     18.4221ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 03:17:20 | 200 |     26.0983ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 03:17:21 | 200 |      10.052ms |             ::1 | GET      "/api/other-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 03:17:21 | 200 |     19.7993ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 03:17:23 | 200 |     43.0594ms |             ::1 | DELETE   "/api/other-services/1"
+[GIN] 2026/05/14 - 03:17:23 | 200 |      5.5776ms |             ::1 | GET      "/api/other-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 03:17:24 | 200 |     11.0634ms |             ::1 | GET      "/api/egress-methods?page=1&pageSize=10&serviceId=&methodType=&status="
+[GIN] 2026/05/14 - 03:17:24 | 200 |     25.7258ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=200"
+[GIN] 2026/05/14 - 03:17:25 | 200 |     45.9542ms |             ::1 | DELETE   "/api/egress-methods/2"
+[GIN] 2026/05/14 - 03:17:25 | 200 |       5.336ms |             ::1 | GET      "/api/egress-methods?page=1&pageSize=10&serviceId=&methodType=&status="
+[GIN] 2026/05/14 - 03:17:26 | 200 |     19.7121ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 03:17:26 | 200 |      20.763ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 03:17:26 | 200 |     28.9272ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 03:17:27 | 200 |     16.8395ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 03:17:28 | 200 |    942.4568ms |             ::1 | POST     "/api/docker-services/6/check"
+[GIN] 2026/05/14 - 03:17:29 | 200 |    246.0285ms |             ::1 | POST     "/api/docker-services/5/check"
+[GIN] 2026/05/14 - 03:17:29 | 200 |    209.3619ms |             ::1 | POST     "/api/docker-services/4/check"
+[GIN] 2026/05/14 - 03:17:29 | 200 |    214.9792ms |             ::1 | POST     "/api/docker-services/3/check"
+[GIN] 2026/05/14 - 03:17:29 | 200 |    225.4275ms |             ::1 | POST     "/api/docker-services/2/check"
+[GIN] 2026/05/14 - 03:17:30 | 200 |    397.3896ms |             ::1 | POST     "/api/docker-services/1/check"
+[GIN] 2026/05/14 - 03:17:30 | 200 |     24.0919ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 03:17:30 | 200 |     18.3877ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+^C2026-05-14T09:26:43.195+0800	INFO	server/main.go:55	数据库表初始化完成
+[GIN-debug] [WARNING] Creating an Engine instance with the Logger and Recovery middleware already attached.
+
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] GET    /api/overview             --> service-manage/handler.(*MachineHandler).Overview-fm (4 handlers)
+[GIN-debug] GET    /api/machines             --> service-manage/handler.(*MachineHandler).List-fm (4 handlers)
+[GIN-debug] GET    /api/machines/:id         --> service-manage/handler.(*MachineHandler).Get-fm (4 handlers)
+[GIN-debug] POST   /api/machines             --> service-manage/handler.(*MachineHandler).Create-fm (4 handlers)
+[GIN-debug] PUT    /api/machines/:id         --> service-manage/handler.(*MachineHandler).Update-fm (4 handlers)
+[GIN-debug] DELETE /api/machines/:id         --> service-manage/handler.(*MachineHandler).Delete-fm (4 handlers)
+[GIN-debug] POST   /api/machines/:id/check-ssh --> service-manage/handler.(*MachineHandler).CheckSSH-fm (4 handlers)
+[GIN-debug] POST   /api/machines/:id/discover-services --> service-manage/handler.(*MachineHandler).DiscoverServices-fm (4 handlers)
+[GIN-debug] GET    /api/docker-services      --> service-manage/handler.(*DockerServiceHandler).List-fm (4 handlers)
+[GIN-debug] POST   /api/docker-services      --> service-manage/handler.(*DockerServiceHandler).Create-fm (4 handlers)
+[GIN-debug] PUT    /api/docker-services/:id  --> service-manage/handler.(*DockerServiceHandler).Update-fm (4 handlers)
+[GIN-debug] DELETE /api/docker-services/:id  --> service-manage/handler.(*DockerServiceHandler).Delete-fm (4 handlers)
+[GIN-debug] POST   /api/docker-services/:id/check --> service-manage/handler.(*DockerServiceHandler).Check-fm (4 handlers)
+[GIN-debug] GET    /api/other-services       --> service-manage/handler.(*OtherServiceHandler).List-fm (4 handlers)
+[GIN-debug] POST   /api/other-services       --> service-manage/handler.(*OtherServiceHandler).Create-fm (4 handlers)
+[GIN-debug] PUT    /api/other-services/:id   --> service-manage/handler.(*OtherServiceHandler).Update-fm (4 handlers)
+[GIN-debug] DELETE /api/other-services/:id   --> service-manage/handler.(*OtherServiceHandler).Delete-fm (4 handlers)
+[GIN-debug] GET    /api/egress-methods       --> service-manage/handler.(*EgressMethodHandler).List-fm (4 handlers)
+[GIN-debug] POST   /api/egress-methods       --> service-manage/handler.(*EgressMethodHandler).Create-fm (4 handlers)
+[GIN-debug] PUT    /api/egress-methods/:id   --> service-manage/handler.(*EgressMethodHandler).Update-fm (4 handlers)
+[GIN-debug] DELETE /api/egress-methods/:id   --> service-manage/handler.(*EgressMethodHandler).Delete-fm (4 handlers)
+2026-05-14T09:26:43.206+0800	INFO	server/main.go:60	服务启动于 :8080
+[GIN-debug] [WARNING] You trusted all proxies, this is NOT safe. We recommend you to set a value.
+Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.
+[GIN-debug] Listening and serving HTTP on :8080
+[GIN] 2026/05/14 - 09:27:00 | 200 |     62.7954ms |             ::1 | GET      "/api/overview"
+[GIN] 2026/05/14 - 09:27:03 | 200 |     12.4897ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 09:27:05 | 200 |     20.1828ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 09:27:05 | 200 |     49.0493ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 09:27:08 | 200 |     22.7123ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 09:27:11 | 200 |     1.045822s |             ::1 | POST     "/api/machines/2/discover-services"
+[GIN] 2026/05/14 - 09:27:12 | 200 |    1.1515116s |             ::1 | POST     "/api/machines/1/discover-services"
+[GIN] 2026/05/14 - 09:27:12 | 200 |     15.9105ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 09:27:14 | 200 |     15.2624ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 09:27:14 | 200 |     21.6686ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 09:27:22 | 200 |      7.0649ms |             ::1 | GET      "/api/other-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 09:27:22 | 200 |     20.2018ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 09:27:23 | 200 |      5.6269ms |             ::1 | GET      "/api/egress-methods?page=1&pageSize=10&serviceId=&methodType=&status="
+[GIN] 2026/05/14 - 09:27:23 | 200 |     24.9436ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=200"
+[GIN] 2026/05/14 - 09:27:24 | 200 |     18.6672ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 09:27:24 | 200 |     27.3641ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 09:27:39 | 200 |     19.0123ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 09:27:43 | 200 |     22.7061ms |             ::1 | GET      "/api/overview"
+[GIN] 2026/05/14 - 09:27:47 | 200 |     17.4041ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 09:27:48 | 200 |     32.1004ms |             ::1 | GET      "/api/overview"
+[GIN] 2026/05/14 - 09:28:58 | 200 |     29.7303ms |             ::1 | GET      "/api/overview"
+[GIN] 2026/05/14 - 09:29:01 | 200 |     29.4382ms |             ::1 | GET      "/api/overview"
+[GIN] 2026/05/14 - 09:29:10 | 200 |      29.907ms |             ::1 | GET      "/api/overview"
+[GIN] 2026/05/14 - 09:29:11 | 200 |     30.0907ms |             ::1 | GET      "/api/overview"
+[GIN] 2026/05/14 - 09:29:20 | 200 |     17.9891ms |             ::1 | GET      "/api/overview"
+[GIN] 2026/05/14 - 09:29:21 | 200 |     18.9209ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 09:29:24 | 200 |     29.4411ms |             ::1 | GET      "/api/overview"
+[GIN] 2026/05/14 - 09:29:25 | 200 |     18.0057ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 09:33:09 | 200 |     19.5524ms |             ::1 | GET      "/api/overview"
+[GIN] 2026/05/14 - 09:33:10 | 200 |     18.0563ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 09:33:12 | 200 |     26.1722ms |             ::1 | GET      "/api/overview"
+[GIN] 2026/05/14 - 09:33:14 | 200 |     18.3276ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 09:33:14 | 200 |     26.1979ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 09:33:25 | 200 |     19.4934ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 09:33:39 | 200 |     15.9057ms |             ::1 | GET      "/api/egress-methods?page=1&pageSize=10&serviceId=&methodType=&status="
+[GIN] 2026/05/14 - 09:33:39 | 200 |      33.082ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=200"
+[GIN] 2026/05/14 - 09:33:41 | 200 |      4.9576ms |             ::1 | GET      "/api/egress-methods?page=1&pageSize=10&serviceId=&methodType=&status="
+[GIN] 2026/05/14 - 09:34:06 | 200 |     19.1766ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 09:34:07 | 200 |      18.664ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 09:34:07 | 200 |     27.2052ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 09:38:45 | 200 |      16.975ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 09:38:59 | 200 |    970.5363ms |             ::1 | POST     "/api/machines/2/discover-services"
+[GIN] 2026/05/14 - 09:39:00 | 200 |    949.7394ms |             ::1 | POST     "/api/machines/1/discover-services"
+[GIN] 2026/05/14 - 09:39:00 | 200 |     16.6329ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 09:39:04 | 200 |      20.555ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 09:39:04 | 200 |     29.8756ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 09:39:04 | 200 |      6.0194ms |             ::1 | GET      "/api/other-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 09:39:04 | 200 |     17.9349ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 09:39:05 | 200 |     19.3017ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 09:39:05 | 200 |     27.3139ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 09:40:30 | 200 |     31.1483ms |             ::1 | GET      "/api/overview"
+[GIN] 2026/05/14 - 09:40:32 | 200 |     18.2874ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 09:40:39 | 200 |    1.0865337s |             ::1 | POST     "/api/machines/2/discover-services"
+[GIN] 2026/05/14 - 09:40:40 | 200 |     964.754ms |             ::1 | POST     "/api/machines/1/discover-services"
+[GIN] 2026/05/14 - 09:40:40 | 200 |     17.7379ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 09:40:40 | 200 |     25.9755ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 09:40:40 | 200 |     17.4217ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 09:40:45 | 200 |      6.6222ms |             ::1 | GET      "/api/egress-methods?page=1&pageSize=10&serviceId=&methodType=&status="
+[GIN] 2026/05/14 - 09:40:45 | 200 |     25.8915ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=200"
+[GIN] 2026/05/14 - 09:40:52 | 200 |     19.7182ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 09:40:53 | 200 |     19.4014ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 09:40:53 | 200 |     26.7531ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 09:42:05 | 200 |     19.7143ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 09:42:06 | 200 |     12.4553ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 09:42:06 | 200 |     17.4017ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="

@@ -1,0 +1,20 @@
+server:
+  port: 8080
+  mode: debug
+
+database:
+  host: 10.10.10.2
+  port: 9243
+  user: root
+  password: "shiwan233"
+  dbname: service_manage
+  charset: utf8mb4
+  max_idle_conns: 10
+  max_open_conns: 100
+
+log:
+  level: info
+  filename: logs/app.log
+  max_size: 100
+  max_backups: 7
+  max_age: 30
