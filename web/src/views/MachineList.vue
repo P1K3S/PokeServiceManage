@@ -73,8 +73,9 @@
           </template>
         </el-table-column>
         <el-table-column prop="serviceCount" label="服务数" width="70" align="center" />
-        <el-table-column label="操作" width="170" align="center">
+        <el-table-column label="操作" width="220" align="center">
           <template #default="{ row }">
+            <el-button type="info" link size="small" @click="viewDetail(row)">查看</el-button>
             <el-button type="primary" link size="small" @click="openForm('edit', row)">编辑</el-button>
             <el-button type="danger" link size="small" @click="handleDelete(row)">删除</el-button>
           </template>
@@ -140,6 +141,36 @@
         <el-button type="primary" @click="handleSubmit" :loading="submitting">确定</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="detailVisible" title="主机详情" width="560px" :close-on-click-modal="false" :lock-scroll="false">
+      <template v-if="detailData">
+        <el-descriptions :column="1" border>
+          <el-descriptions-item label="主机名称">{{ detailData.name }}</el-descriptions-item>
+          <el-descriptions-item label="IP地址">{{ detailData.ip }}</el-descriptions-item>
+          <el-descriptions-item label="类型">
+            <el-tag :type="detailData.machineType === 'CLOUD' ? '' : 'success'" size="small">
+              {{ detailData.machineType === 'CLOUD' ? '云服务器' : '局域网' }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="CPU">{{ detailData.cpu || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="内存">{{ detailData.memory || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="磁盘">{{ detailData.disk || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="操作系统">{{ detailData.os || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="状态">
+            <el-tag :type="detailData.status === 1 ? 'success' : 'danger'" size="small">
+              {{ detailData.status === 1 ? '在线' : '离线' }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="服务数">{{ detailData.serviceCount || 0 }}</el-descriptions-item>
+          <el-descriptions-item label="SSH端口">{{ detailData.sshPort || 22 }}</el-descriptions-item>
+          <el-descriptions-item label="SSH用户">{{ detailData.sshUser || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="备注">{{ detailData.remark || '-' }}</el-descriptions-item>
+        </el-descriptions>
+      </template>
+      <template #footer>
+        <el-button @click="detailVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -164,6 +195,9 @@ const submitting = ref(false)
 const allSshChecking = ref(false)
 const allDiscovering = ref(false)
 const editId = ref(null)
+
+const detailVisible = ref(false)
+const detailData = ref(null)
 
 const form = reactive({
   name: '', ip: '', machineType: 'LAN', cpu: '', memory: '', disk: '', os: '',
@@ -306,6 +340,11 @@ const handleSubmit = async () => {
   } finally {
     submitting.value = false
   }
+}
+
+const viewDetail = (row) => {
+  detailData.value = row
+  detailVisible.value = true
 }
 
 const handleDelete = (row) => {

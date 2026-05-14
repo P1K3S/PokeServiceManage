@@ -43,8 +43,9 @@
         </el-table-column>
         <el-table-column prop="egressCount" label="出站" width="65" align="center" />
         <el-table-column prop="remark" label="备注" min-width="160" show-overflow-tooltip align="center" />
-        <el-table-column label="操作" width="170" align="center">
+        <el-table-column label="操作" width="220" align="center">
           <template #default="{ row }">
+            <el-button type="info" link size="small" @click="viewDetail(row)">查看</el-button>
             <el-button type="primary" link size="small" @click="openForm('edit', row)">编辑</el-button>
             <el-button type="danger" link size="small" @click="handleDelete(row)">删除</el-button>
           </template>
@@ -93,6 +94,28 @@
         <el-button type="primary" @click="handleSubmit" :loading="submitting">确定</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="detailVisible" title="服务详情" width="480px" :close-on-click-modal="false" :lock-scroll="false">
+      <template v-if="detailData">
+        <el-descriptions :column="1" border>
+          <el-descriptions-item label="服务名称">{{ detailData.name }}</el-descriptions-item>
+          <el-descriptions-item label="所属主机">{{ detailData.machineName }}</el-descriptions-item>
+          <el-descriptions-item label="主机IP">{{ detailData.machineIp || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="端口">{{ detailData.port || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="协议">{{ detailData.protocol || 'TCP' }}</el-descriptions-item>
+          <el-descriptions-item label="状态">
+            <el-tag :type="detailData.status === 1 ? 'primary' : 'info'" size="small">
+              {{ detailData.status === 1 ? '运行中' : '已停止' }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="出站数量">{{ detailData.egressCount || 0 }}</el-descriptions-item>
+          <el-descriptions-item label="备注">{{ detailData.remark || '-' }}</el-descriptions-item>
+        </el-descriptions>
+      </template>
+      <template #footer>
+        <el-button @click="detailVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -114,6 +137,9 @@ const formMode = ref('create')
 const formRef = ref(null)
 const submitting = ref(false)
 const editId = ref(null)
+
+const detailVisible = ref(false)
+const detailData = ref(null)
 
 const form = reactive({
   machineId: null, name: '', port: 80, protocol: 'TCP', status: 1, remark: ''
@@ -190,6 +216,11 @@ const handleDelete = (row) => {
     ElMessage.success('删除成功')
     fetchData()
   }).catch(() => {})
+}
+
+const viewDetail = (row) => {
+  detailData.value = row
+  detailVisible.value = true
 }
 
 onMounted(() => {

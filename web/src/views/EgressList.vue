@@ -63,8 +63,9 @@
           </template>
         </el-table-column>
         <el-table-column prop="remark" label="备注" min-width="140" show-overflow-tooltip align="center" />
-        <el-table-column label="操作" width="200" fixed="right" align="center">
+        <el-table-column label="操作" width="240" fixed="right" align="center">
           <template #default="{ row }">
+            <el-button type="info" link size="small" @click="viewDetail(row)">查看</el-button>
             <el-button type="success" link size="small" @click="copyAddress(row)">复制地址</el-button>
             <el-button type="primary" link size="small" @click="openForm('edit', row)">编辑</el-button>
             <el-button type="danger" link size="small" @click="handleDelete(row)">删除</el-button>
@@ -141,6 +142,34 @@
         <el-button type="primary" @click="handleSubmit" :loading="submitting">确定</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="detailVisible" title="出站方式详情" width="520px" :close-on-click-modal="false" :lock-scroll="false">
+      <template v-if="detailData">
+        <el-descriptions :column="1" border>
+          <el-descriptions-item label="代理名称">{{ detailData.proxyName || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="所属服务">{{ detailData.serviceName ? detailData.serviceName + '-' + detailData.machineName : '-' }}</el-descriptions-item>
+          <el-descriptions-item label="出站服务">
+            <template v-if="detailData.isDirect">本机直连</template>
+            <template v-else-if="detailData.egressServiceName">
+              <el-tag type="success" size="small">{{ detailData.egressServiceName }}</el-tag>
+            </template>
+            <template v-else>-</template>
+          </el-descriptions-item>
+          <el-descriptions-item label="公网地址">{{ detailData.publicIp }}:{{ detailData.publicPort }}</el-descriptions-item>
+          <el-descriptions-item label="内网地址">{{ detailData.internalIp }}:{{ detailData.internalPort }}</el-descriptions-item>
+          <el-descriptions-item label="协议">{{ detailData.protocol || 'TCP' }}</el-descriptions-item>
+          <el-descriptions-item label="状态">
+            <el-tag :type="detailData.status === 1 ? 'success' : 'warning'" size="small">
+              {{ detailData.status === 1 ? '启用' : '停用' }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="备注">{{ detailData.remark || '-' }}</el-descriptions-item>
+        </el-descriptions>
+      </template>
+      <template #footer>
+        <el-button @click="detailVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -166,6 +195,9 @@ const formMode = ref('create')
 const formRef = ref(null)
 const submitting = ref(false)
 const editId = ref(null)
+
+const detailVisible = ref(false)
+const detailData = ref(null)
 
 const form = reactive({
   serviceId: '', serviceType: 'docker', isDirect: true, egressServiceId: '', proxyName: '',
@@ -345,6 +377,11 @@ const handleDelete = (row) => {
     ElMessage.success('删除成功')
     fetchData()
   }).catch(() => {})
+}
+
+const viewDetail = (row) => {
+  detailData.value = row
+  detailVisible.value = true
 }
 
 const copyAddress = (row) => {
