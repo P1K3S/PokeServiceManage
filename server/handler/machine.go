@@ -150,11 +150,57 @@ func (h *MachineHandler) Update(c *gin.Context) {
 	}
 
 	updates = convertKeys(updates)
+
+	oldIP := machine.IP
+
 	if err := h.DB.Model(&machine).Updates(updates).Error; err != nil {
 		jsonError(c, "更新主机失败")
 		return
 	}
+
+	newIP, _ := updates["ip"].(string)
+	if newIP != "" && newIP != oldIP {
+		h.syncEgressMethodIP(uint(id), oldIP, newIP)
+	}
+
 	jsonSuccess(c, nil)
+}
+
+func (h *MachineHandler) syncEgressMethodIP(machineID uint, oldIP, newIP string) {
+	var dockerServiceIDs []uint
+	h.DB.Model(&model.DockerService{}).Where("machine_id = ?", machineID).Pluck("id", &dockerServiceIDs)
+
+	var otherServiceIDs []uint
+	h.DB.Model(&model.OtherService{}).Where("machine_id = ?", machineID).Pluck("id", &otherServiceIDs)
+
+	if len(dockerServiceIDs) > 0 {
+		h.DB.Model(&model.EgressMethod{}).
+			Where("service_id IN ? AND service_type = ?", dockerServiceIDs, "docker").
+			Where("internal_ip = ?", oldIP).
+			Update("internal_ip", newIP)
+
+		h.DB.Model(&model.EgressMethod{}).
+			Where("service_id IN ? AND service_type = ? AND is_direct = ?", dockerServiceIDs, "docker", true).
+			Where("public_ip = ?", oldIP).
+			Update("public_ip", newIP)
+
+		h.DB.Model(&model.EgressMethod{}).
+			Where("egress_service_id IN ? AND is_direct = ?", dockerServiceIDs, false).
+			Where("public_ip = ?", oldIP).
+			Update("public_ip", newIP)
+	}
+
+	if len(otherServiceIDs) > 0 {
+		h.DB.Model(&model.EgressMethod{}).
+			Where("service_id IN ? AND service_type = ?", otherServiceIDs, "other").
+			Where("internal_ip = ?", oldIP).
+			Update("internal_ip", newIP)
+
+		h.DB.Model(&model.EgressMethod{}).
+			Where("service_id IN ? AND service_type = ? AND is_direct = ?", otherServiceIDs, "other", true).
+			Where("public_ip = ?", oldIP).
+			Update("public_ip", newIP)
+	}
 }
 
 func (h *MachineHandler) Delete(c *gin.Context) {
