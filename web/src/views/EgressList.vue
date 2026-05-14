@@ -167,7 +167,7 @@ const submitting = ref(false)
 const editId = ref(null)
 
 const form = reactive({
-  serviceId: '', serviceType: 'docker', isDirect: true, egressServiceId: '', methodType: 'FRP', proxyName: '',
+  serviceId: '', serviceType: 'docker', isDirect: true, egressServiceId: '', proxyName: '',
   publicIp: '', publicPort: 0, internalIp: '', internalPort: 0,
   protocol: 'TCP', status: 1, remark: ''
 })
@@ -281,7 +281,7 @@ const openForm = (mode, row) => {
     const sid = row.serviceType === 'other' ? 'other-' + row.serviceId : 'docker-' + row.serviceId
     Object.assign(form, {
       serviceId: sid, serviceType: row.serviceType || 'docker',
-      isDirect: row.isDirect || false, egressServiceId: row.egressServiceId || '', methodType: row.methodType, proxyName: row.proxyName || '',
+      isDirect: row.isDirect || false, egressServiceId: row.egressServiceId || '', proxyName: row.proxyName || '',
       publicIp: row.publicIp, publicPort: row.publicPort,
       internalIp: row.internalIp, internalPort: row.internalPort,
       protocol: row.protocol || 'TCP', status: row.status, remark: row.remark || ''
@@ -289,7 +289,7 @@ const openForm = (mode, row) => {
   } else {
     editId.value = null
     Object.assign(form, {
-      serviceId: '', serviceType: 'docker', isDirect: true, egressServiceId: '', methodType: 'FRP', proxyName: '',
+      serviceId: '', serviceType: 'docker', isDirect: true, egressServiceId: '', proxyName: '',
       publicIp: '', publicPort: 0, internalIp: '', internalPort: 0,
       protocol: 'TCP', status: 1, remark: ''
     })
@@ -311,7 +311,6 @@ const handleSubmit = async () => {
       serviceType: svc ? svc.serviceType : 'docker',
       isDirect: form.isDirect,
       egressServiceId: form.isDirect ? 0 : Number(form.egressServiceId),
-      methodType: form.methodType,
       proxyName: form.proxyName,
       publicIp: form.publicIp,
       publicPort: form.publicPort,

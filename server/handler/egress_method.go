@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"strconv"
 
 	"service-manage/model"
@@ -152,7 +153,8 @@ func (h *EgressMethodHandler) Create(c *gin.Context) {
 	}
 
 	if err := h.DB.Create(&method).Error; err != nil {
-		jsonError(c, "创建出站方式失败")
+		fmt.Printf("创建出站方式失败: %v, method: %+v\n", err, method)
+		jsonError(c, "创建出站方式失败: "+err.Error())
 		return
 	}
 	jsonSuccess(c, gin.H{"id": method.ID})
