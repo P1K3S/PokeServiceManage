@@ -36,7 +36,7 @@
 | 1001 | 请求参数错误 |
 | 1002 | 资源不存在 |
 | 1003 | 数据库操作失败 |
-| 1004 | 数据重复（如机器名已存在） |
+| 1004 | 数据重复 |
 
 ### 分页参数
 
@@ -62,9 +62,9 @@
 
 ---
 
-## 一、机器管理接口
+## 一、主机管理接口
 
-### 1.1 获取机器列表
+### 1.1 获取主机列表
 
 ```
 GET /machines
@@ -98,6 +98,8 @@ GET /machines
         "disk": "1TB SSD",
         "os": "Ubuntu 22.04",
         "status": 1,
+        "sshPort": 22,
+        "sshUser": "root",
         "remark": "主业务服务器",
         "createdAt": "2026-05-13T10:00:00+08:00",
         "updatedAt": "2026-05-13T10:00:00+08:00",
@@ -111,11 +113,9 @@ GET /machines
 }
 ```
 
-> `serviceCount` 字段为额外返回的该机器下的服务数量（不在数据库字段中，由后端统计）
-
 ---
 
-### 1.2 获取机器详情
+### 1.2 获取主机详情
 
 ```
 GET /machines/:id
@@ -125,43 +125,11 @@ GET /machines/:id
 
 | 参数 | 类型 | 说明 |
 |------|------|------|
-| id | int | 机器ID |
-
-**响应示例：**
-
-```json
-{
-  "code": 0,
-  "message": "success",
-  "data": {
-    "id": 1,
-    "name": "办公内网-Node1",
-    "ip": "192.168.1.101",
-    "machineType": "LAN",
-    "cpu": "Intel i7-12700",
-    "memory": "32GB",
-    "disk": "1TB SSD",
-    "os": "Ubuntu 22.04",
-    "status": 1,
-    "remark": "主业务服务器",
-    "createdAt": "2026-05-13T10:00:00+08:00",
-    "updatedAt": "2026-05-13T10:00:00+08:00"
-  }
-}
-```
-
-**错误响应：**
-
-```json
-{
-  "code": 1002,
-  "message": "机器不存在"
-}
-```
+| id | int | 主机ID |
 
 ---
 
-### 1.3 新增机器
+### 1.3 新增主机
 
 ```
 POST /machines
@@ -174,113 +142,98 @@ POST /machines
   "name": "办公内网-Node2",
   "ip": "192.168.1.102",
   "machineType": "LAN",
-  "cpu": "Intel i5-12400",
-  "memory": "16GB",
-  "disk": "512GB SSD",
-  "os": "CentOS 7.9",
-  "status": 1,
+  "sshPort": 22,
+  "sshUser": "root",
+  "sshPassword": "password",
   "remark": "测试服务器"
 }
 ```
 
 | 字段 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| name | string | 是 | 机器名称（唯一） |
+| name | string | 是 | 主机名称（唯一） |
 | ip | string | 是 | 管理IP |
 | machineType | string | 是 | LAN 或 CLOUD |
-| cpu | string | 否 | CPU信息 |
-| memory | string | 否 | 内存 |
-| disk | string | 否 | 磁盘 |
-| os | string | 否 | 操作系统 |
-| status | int | 否 | 默认 1 |
+| sshPort | int | 否 | SSH端口，默认22 |
+| sshUser | string | 否 | SSH用户名，默认root |
+| sshPassword | string | 否 | SSH密码 |
 | remark | string | 否 | 备注 |
-
-**响应示例：**
-
-```json
-{
-  "code": 0,
-  "message": "success",
-  "data": {
-    "id": 2
-  }
-}
-```
-
-**错误响应（名称重复）：**
-
-```json
-{
-  "code": 1004,
-  "message": "机器名称已存在"
-}
-```
 
 ---
 
-### 1.4 编辑机器
+### 1.4 编辑主机
 
 ```
 PUT /machines/:id
 ```
 
-**Path 参数：**
-
-| 参数 | 类型 | 说明 |
-|------|------|------|
-| id | int | 机器ID |
-
-**请求体：**（同新增，所有字段可选，只传需要修改的字段）
+**请求体：**（部分更新，SSH密码为空则不修改）
 
 ```json
 {
   "name": "办公内网-Node2-Updated",
-  "remark": "已升级配置"
-}
-```
-
-**响应示例：**
-
-```json
-{
-  "code": 0,
-  "message": "success"
+  "sshPort": 2222
 }
 ```
 
 ---
 
-### 1.5 删除机器
+### 1.5 删除主机
 
 ```
 DELETE /machines/:id
 ```
 
-**Path 参数：**
+> **注意**：删除主机会同时删除关联的所有服务和出站方式
 
-| 参数 | 类型 | 说明 |
-|------|------|------|
-| id | int | 机器ID |
+---
+
+### 1.6 SSH连通检测
+
+```
+POST /machines/:id/check-ssh
+```
 
 **响应示例：**
 
 ```json
 {
   "code": 0,
-  "message": "success"
+  "message": "SSH连接成功",
+  "data": {
+    "status": 1
+  }
 }
 ```
 
-> **注意**：删除机器会同时删除该机器下的所有服务及服务的出站方式（软删除）
+---
+
+### 1.7 Docker服务发现
+
+```
+POST /machines/:id/discover-services
+```
+
+**响应示例：**
+
+```json
+{
+  "code": 0,
+  "message": "检测完成：更新 5 个 Docker 服务",
+  "data": {
+    "updated": 5
+  }
+}
+```
 
 ---
 
-## 二、服务管理接口
+## 二、Docker服务管理接口
 
-### 2.1 获取服务列表
+### 2.1 获取Docker服务列表
 
 ```
-GET /services
+GET /docker-services
 ```
 
 **Query 参数：**
@@ -290,8 +243,7 @@ GET /services
 | page | int | 否 | 页码，默认 1 |
 | pageSize | int | 否 | 每页条数，默认 10 |
 | keyword | string | 否 | 服务名称模糊搜索 |
-| machineId | int | 否 | 按所属机器筛选 |
-| type | string | 否 | 筛选：Web / DB / Cache / Other |
+| machineId | int | 否 | 按所属主机筛选 |
 | status | int | 否 | 筛选：1-运行中 0-已停止 |
 
 **响应示例：**
@@ -307,32 +259,29 @@ GET /services
         "machineId": 1,
         "machineName": "办公内网-Node1",
         "name": "Nginx",
-        "type": "Web",
-        "listenIp": "0.0.0.0",
         "port": 80,
         "protocol": "TCP",
+        "dockerSourceIp": "172.17.0.2",
+        "dockerSourcePort": 80,
+        "portMappings": "[{\"hostPort\":80,\"containerPort\":80,\"protocol\":\"TCP\"}]",
+        "locked": 0,
         "status": 1,
         "remark": "前端代理",
         "createdAt": "2026-05-13T10:00:00+08:00",
-        "updatedAt": "2026-05-13T10:00:00+08:00",
-        "egressCount": 2
+        "updatedAt": "2026-05-13T10:00:00+08:00"
       }
     ],
-    "total": 1,
-    "page": 1,
-    "pageSize": 10
+    "total": 1
   }
 }
 ```
 
-> `machineName` 和 `egressCount` 为关联查询的额外返回字段
-
 ---
 
-### 2.2 新增服务
+### 2.2 新增Docker服务
 
 ```
-POST /services
+POST /docker-services
 ```
 
 **请求体：**
@@ -340,26 +289,39 @@ POST /services
 ```json
 {
   "machineId": 1,
-  "name": "MySQL",
-  "type": "DB",
-  "listenIp": "127.0.0.1",
-  "port": 3306,
+  "name": "Nginx",
+  "port": 80,
   "protocol": "TCP",
-  "status": 1,
-  "remark": "主数据库"
+  "dockerSourceIp": "172.17.0.2",
+  "dockerSourcePort": 80,
+  "portMappings": "[{\"hostPort\":80,\"containerPort\":80,\"protocol\":\"TCP\"}]",
+  "status": 1
 }
 ```
 
-| 字段 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| machineId | int | 是 | 所属机器ID |
-| name | string | 是 | 服务名称 |
-| type | string | 是 | Web / DB / Cache / Other |
-| listenIp | string | 否 | 默认 "0.0.0.0" |
-| port | int | 是 | 服务端口（1-65535） |
-| protocol | string | 否 | 默认 "TCP" |
-| status | int | 否 | 默认 1 |
-| remark | string | 否 | 备注 |
+---
+
+### 2.3 编辑Docker服务
+
+```
+PUT /docker-services/:id
+```
+
+---
+
+### 2.4 删除Docker服务
+
+```
+DELETE /docker-services/:id
+```
+
+---
+
+### 2.5 检测服务状态
+
+```
+POST /docker-services/:id/check
+```
 
 **响应示例：**
 
@@ -368,73 +330,88 @@ POST /services
   "code": 0,
   "message": "success",
   "data": {
-    "id": 2
+    "status": 1
   }
 }
 ```
 
 ---
 
-### 2.3 编辑服务
+### 2.6 锁定/解锁服务
 
 ```
-PUT /services/:id
+PUT /docker-services/:id/lock
 ```
 
-**Path 参数：**
-
-| 参数 | 类型 | 说明 |
-|------|------|------|
-| id | int | 服务ID |
-
-**请求体：**（部分更新）
+**请求体：**
 
 ```json
 {
-  "port": 3307,
-  "remark": "已迁移端口"
-}
-```
-
-**响应示例：**
-
-```json
-{
-  "code": 0,
-  "message": "success"
+  "locked": 1
 }
 ```
 
 ---
 
-### 2.4 删除服务
+## 三、其他服务管理接口
+
+### 3.1 获取其他服务列表
 
 ```
-DELETE /services/:id
+GET /other-services
 ```
 
-**Path 参数：**
+**Query 参数：**
 
-| 参数 | 类型 | 说明 |
-|------|------|------|
-| id | int | 服务ID |
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| page | int | 否 | 页码，默认 1 |
+| pageSize | int | 否 | 每页条数，默认 10 |
+| keyword | string | 否 | 服务名称模糊搜索 |
+| machineId | int | 否 | 按所属主机筛选 |
+| status | int | 否 | 筛选：1-运行中 0-已停止 |
 
-> **注意**：删除服务会同时软删除关联的出站方式
+---
 
-**响应示例：**
+### 3.2 新增其他服务
+
+```
+POST /other-services
+```
+
+**请求体：**
 
 ```json
 {
-  "code": 0,
-  "message": "success"
+  "machineId": 1,
+  "name": "Custom Service",
+  "port": 8080,
+  "protocol": "TCP",
+  "status": 1
 }
 ```
 
 ---
 
-## 三、出站方式管理接口
+### 3.3 编辑其他服务
 
-### 3.1 获取出站方式列表
+```
+PUT /other-services/:id
+```
+
+---
+
+### 3.4 删除其他服务
+
+```
+DELETE /other-services/:id
+```
+
+---
+
+## 四、出站方式管理接口
+
+### 4.1 获取出站方式列表
 
 ```
 GET /egress-methods
@@ -447,47 +424,13 @@ GET /egress-methods
 | page | int | 否 | 页码，默认 1 |
 | pageSize | int | 否 | 每页条数，默认 10 |
 | serviceId | int | 否 | 按所属服务筛选 |
-| methodType | string | 否 | 筛选：FRP / PORT_MAPPING / VPN / DIRECT |
+| serviceType | string | 否 | DOCKER / OTHER |
+| methodType | string | 否 | FRP / PORT_MAPPING / VPN / DIRECT |
 | status | int | 否 | 筛选：1-启用 0-停用 |
-
-**响应示例：**
-
-```json
-{
-  "code": 0,
-  "message": "success",
-  "data": {
-    "list": [
-      {
-        "id": 1,
-        "serviceId": 1,
-        "serviceName": "Nginx",
-        "machineName": "办公内网-Node1",
-        "methodType": "FRP",
-        "proxyName": "nginx-frp-tunnel",
-        "publicIp": "123.45.67.89",
-        "publicPort": 8080,
-        "internalIp": "192.168.1.101",
-        "internalPort": 80,
-        "protocol": "TCP",
-        "status": 1,
-        "remark": "FRP内网穿透",
-        "createdAt": "2026-05-13T10:00:00+08:00",
-        "updatedAt": "2026-05-13T10:00:00+08:00"
-      }
-    ],
-    "total": 1,
-    "page": 1,
-    "pageSize": 10
-  }
-}
-```
-
-> `serviceName` 和 `machineName` 为关联查询的额外返回字段
 
 ---
 
-### 3.2 新增出站方式
+### 4.2 新增出站方式
 
 ```
 POST /egress-methods
@@ -498,109 +441,43 @@ POST /egress-methods
 ```json
 {
   "serviceId": 1,
+  "serviceType": "DOCKER",
   "methodType": "FRP",
-  "proxyName": "nginx-frp-tunnel",
+  "proxyName": "nginx-frp",
   "publicIp": "123.45.67.89",
   "publicPort": 8080,
   "internalIp": "192.168.1.101",
   "internalPort": 80,
   "protocol": "TCP",
-  "status": 1,
-  "remark": "FRP内网穿透"
-}
-```
-
-| 字段 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| serviceId | int | 是 | 所属服务ID |
-| methodType | string | 是 | FRP / PORT_MAPPING / VPN / DIRECT |
-| proxyName | string | 否 | 代理/隧道名称 |
-| publicIp | string | 是 | 公网IP |
-| publicPort | int | 是 | 公网端口 |
-| internalIp | string | 是 | 内网IP |
-| internalPort | int | 是 | 内网端口 |
-| protocol | string | 否 | 默认 "TCP" |
-| status | int | 否 | 默认 1 |
-| remark | string | 否 | 备注 |
-
-**响应示例：**
-
-```json
-{
-  "code": 0,
-  "message": "success",
-  "data": {
-    "id": 1
-  }
+  "status": 1
 }
 ```
 
 ---
 
-### 3.3 编辑出站方式
+### 4.3 编辑出站方式
 
 ```
 PUT /egress-methods/:id
 ```
 
-**Path 参数：**
-
-| 参数 | 类型 | 说明 |
-|------|------|------|
-| id | int | 出站方式ID |
-
-**请求体：**（部分更新）
-
-```json
-{
-  "publicPort": 9090,
-  "status": 0
-}
-```
-
-**响应示例：**
-
-```json
-{
-  "code": 0,
-  "message": "success"
-}
-```
-
 ---
 
-### 3.4 删除出站方式
+### 4.4 删除出站方式
 
 ```
 DELETE /egress-methods/:id
 ```
 
-**Path 参数：**
-
-| 参数 | 类型 | 说明 |
-|------|------|------|
-| id | int | 出站方式ID |
-
-**响应示例：**
-
-```json
-{
-  "code": 0,
-  "message": "success"
-}
-```
-
 ---
 
-## 四、仪表盘接口
+## 五、仪表盘接口
 
-### 4.1 获取概览数据
+### 5.1 获取概览数据
 
 ```
 GET /overview
 ```
-
-**Query 参数：** 无
 
 **响应示例：**
 
@@ -622,16 +499,6 @@ GET /overview
         "status": 1,
         "serviceCount": 8
       }
-    ],
-    "recentLogs": [
-      {
-        "id": 1,
-        "resourceType": "service",
-        "resourceId": 5,
-        "action": "CREATE",
-        "detail": "新增服务 Nginx",
-        "createdAt": "2026-05-13T10:30:00+08:00"
-      }
     ]
   }
 }
@@ -639,30 +506,21 @@ GET /overview
 
 ---
 
-## 五、数据模型枚举值
+## 六、枚举值定义
 
-### machineType（机器类型）
+### machineType（主机类型）
 
 | 值 | 说明 |
 |----|------|
-| LAN | 局域网机器 |
+| LAN | 局域网主机 |
 | CLOUD | 云服务器 |
-
-### type（服务类型）
-
-| 值 | 说明 |
-|----|------|
-| Web | Web服务（Nginx/Apache/Tomcat 等） |
-| DB | 数据库（MySQL/PostgreSQL/Redis 等） |
-| Cache | 缓存服务 |
-| Other | 其他 |
 
 ### methodType（出站方式类型）
 
 | 值 | 说明 |
 |----|------|
 | FRP | FRP 内网穿透 |
-| PORT_MAPPING | 端口映射（路由器/防火墙） |
+| PORT_MAPPING | 端口映射 |
 | VPN | VPN 接入 |
 | DIRECT | 直接公网访问 |
 
@@ -680,5 +538,35 @@ GET /overview
 | 上下文 | 1 | 0 |
 |--------|---|---|
 | machines | 在线 | 离线 |
-| services | 运行中 | 已停止 |
+| docker_services | 运行中 | 已停止 |
+| other_services | 运行中 | 已停止 |
 | egress_methods | 启用 | 停用 |
+
+---
+
+## 接口列表汇总
+
+| HTTP方法 | 路径 | 说明 |
+|----------|------|------|
+| GET | /machines | 获取主机列表 |
+| GET | /machines/:id | 获取主机详情 |
+| POST | /machines | 新增主机 |
+| PUT | /machines/:id | 编辑主机 |
+| DELETE | /machines/:id | 删除主机 |
+| POST | /machines/:id/check-ssh | SSH连通检测 |
+| POST | /machines/:id/discover-services | Docker服务发现 |
+| GET | /docker-services | 获取Docker服务列表 |
+| POST | /docker-services | 新增Docker服务 |
+| PUT | /docker-services/:id | 编辑Docker服务 |
+| DELETE | /docker-services/:id | 删除Docker服务 |
+| POST | /docker-services/:id/check | 检测服务状态 |
+| PUT | /docker-services/:id/lock | 锁定/解锁服务 |
+| GET | /other-services | 获取其他服务列表 |
+| POST | /other-services | 新增其他服务 |
+| PUT | /other-services/:id | 编辑其他服务 |
+| DELETE | /other-services/:id | 删除其他服务 |
+| GET | /egress-methods | 获取出站方式列表 |
+| POST | /egress-methods | 新增出站方式 |
+| PUT | /egress-methods/:id | 编辑出站方式 |
+| DELETE | /egress-methods/:id | 删除出站方式 |
+| GET | /overview | 获取概览数据 |
