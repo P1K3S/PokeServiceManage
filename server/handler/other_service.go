@@ -52,10 +52,13 @@ func (h *OtherServiceHandler) List(c *gin.Context) {
 		model.OtherService
 		MachineName string `json:"machineName"`
 		MachineIP   string `json:"machineIp"`
+		EgressCount int64  `json:"egressCount"`
 	}
 
 	var result []OtherServiceVO
 	for _, s := range services {
+		var egressCount int64
+		h.DB.Model(&model.EgressMethod{}).Where("service_id = ? AND service_type = ?", s.ID, "other").Count(&egressCount)
 		var machine model.Machine
 		machineName := ""
 		machineIP := ""
@@ -67,6 +70,7 @@ func (h *OtherServiceHandler) List(c *gin.Context) {
 			OtherService: s,
 			MachineName:  machineName,
 			MachineIP:    machineIP,
+			EgressCount:  egressCount,
 		})
 	}
 

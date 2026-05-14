@@ -191,7 +191,7 @@ import { Delete } from '@element-plus/icons-vue'
 const list = ref([])
 const total = ref(0)
 const page = ref(1)
-const pageSize = ref(10)
+const pageSize = ref(20)
 const loading = ref(false)
 const machineOptions = ref([])
 const search = reactive({ keyword: '', machineId: '', status: '' })

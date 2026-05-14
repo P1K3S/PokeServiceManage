@@ -62,6 +62,7 @@
             </el-tag>
           </template>
         </el-table-column>
+        <el-table-column prop="remark" label="备注" min-width="140" show-overflow-tooltip align="center" />
         <el-table-column label="操作" width="200" fixed="right" align="center">
           <template #default="{ row }">
             <el-button type="success" link size="small" @click="copyAddress(row)">复制地址</el-button>
@@ -153,7 +154,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 const list = ref([])
 const total = ref(0)
 const page = ref(1)
-const pageSize = ref(10)
+const pageSize = ref(20)
 const loading = ref(false)
 const dockerServiceOptions = ref([])
 const otherServiceOptions = ref([])

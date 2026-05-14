@@ -31,10 +31,13 @@
         </el-form-item>
       </el-form>
 
-      <el-table :data="list" stripe border v-loading="loading" @expand-change="onExpandChange">
+      <el-table :data="list" stripe border v-loading="loading" row-key="id" @expand-change="onExpandChange">
         <el-table-column type="expand" width="40">
           <template #default="{ row }">
-            <el-table :data="row._services" stripe border size="small" v-if="row._services && row._services.length > 0">
+            <div v-if="row._servicesLoading" style="text-align: center; padding: 20px">
+              <el-icon class="is-loading" style="margin-right: 4px"><Loading /></el-icon>加载中...
+            </div>
+            <el-table :data="row._services" stripe border size="small" v-else-if="row._services && row._services.length > 0">
               <el-table-column prop="name" label="服务名称" align="center" />
               <el-table-column prop="type" label="类型" width="100" align="center" />
               <el-table-column prop="port" label="端口" width="80" align="center" />
@@ -146,11 +149,12 @@ import { getMachines, createMachine, updateMachine, deleteMachine, checkMachineS
 import { getServices } from '../api/service'
 import { getOtherServices } from '../api/otherService'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Loading } from '@element-plus/icons-vue'
 
 const list = ref([])
 const total = ref(0)
 const page = ref(1)
-const pageSize = ref(10)
+const pageSize = ref(20)
 const loading = ref(false)
 const search = reactive({ keyword: '', machineType: '', status: '' })
 const formVisible = ref(false)
@@ -184,8 +188,9 @@ const fetchData = async () => {
   }
 }
 
-const onExpandChange = async (row) => {
-  if (row._services) return
+const onExpandChange = async (row, expandedRows) => {
+  if (row._services || row._servicesLoading) return
+  row._servicesLoading = true
   try {
     const [dockerRes, otherRes] = await Promise.all([
       getServices({ machineId: row.id, page: 1, pageSize: 100 }),
@@ -196,6 +201,8 @@ const onExpandChange = async (row) => {
     row._services = [...dockerServices, ...otherServices]
   } catch {
     row._services = []
+  } finally {
+    row._servicesLoading = false
   }
 }
 

@@ -41,6 +41,7 @@
             </el-tag>
           </template>
         </el-table-column>
+        <el-table-column prop="egressCount" label="出站" width="65" align="center" />
         <el-table-column prop="remark" label="备注" min-width="160" show-overflow-tooltip align="center" />
         <el-table-column label="操作" width="170" align="center">
           <template #default="{ row }">
@@ -104,7 +105,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 const list = ref([])
 const total = ref(0)
 const page = ref(1)
-const pageSize = ref(10)
+const pageSize = ref(20)
 const loading = ref(false)
 const machineOptions = ref([])
 const search = reactive({ keyword: '', machineId: '', status: '' })
