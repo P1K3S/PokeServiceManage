@@ -506,4 +506,313 @@ Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-
 2026/05/14 10:57:17 [32mD:/GraduationProject/PokeServiceManage/server/handler/machine.go:231 [33mSLOW SQL >= 200ms
 [0m[31;1m[210.106ms] [33m[rows:1][35m SELECT count(*) FROM `other_services` WHERE machine_id = 1 AND `other_services`.`deleted_at` IS NULL[0m
 [GIN] 2026/05/14 - 10:57:17 | 200 |    3.1619512s |             ::1 | GET      "/api/overview"
+^C2026-05-14T15:37:38.462+0800	INFO	server/main.go:55	数据库表初始化完成
+[GIN-debug] [WARNING] Creating an Engine instance with the Logger and Recovery middleware already attached.
+
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] GET    /api/overview             --> service-manage/handler.(*MachineHandler).Overview-fm (4 handlers)
+[GIN-debug] GET    /api/machines             --> service-manage/handler.(*MachineHandler).List-fm (4 handlers)
+[GIN-debug] GET    /api/machines/:id         --> service-manage/handler.(*MachineHandler).Get-fm (4 handlers)
+[GIN-debug] POST   /api/machines             --> service-manage/handler.(*MachineHandler).Create-fm (4 handlers)
+[GIN-debug] PUT    /api/machines/:id         --> service-manage/handler.(*MachineHandler).Update-fm (4 handlers)
+[GIN-debug] DELETE /api/machines/:id         --> service-manage/handler.(*MachineHandler).Delete-fm (4 handlers)
+[GIN-debug] POST   /api/machines/:id/check-ssh --> service-manage/handler.(*MachineHandler).CheckSSH-fm (4 handlers)
+[GIN-debug] POST   /api/machines/:id/discover-services --> service-manage/handler.(*MachineHandler).DiscoverServices-fm (4 handlers)
+[GIN-debug] GET    /api/docker-services      --> service-manage/handler.(*DockerServiceHandler).List-fm (4 handlers)
+[GIN-debug] POST   /api/docker-services      --> service-manage/handler.(*DockerServiceHandler).Create-fm (4 handlers)
+[GIN-debug] PUT    /api/docker-services/:id  --> service-manage/handler.(*DockerServiceHandler).Update-fm (4 handlers)
+[GIN-debug] DELETE /api/docker-services/:id  --> service-manage/handler.(*DockerServiceHandler).Delete-fm (4 handlers)
+[GIN-debug] POST   /api/docker-services/:id/check --> service-manage/handler.(*DockerServiceHandler).Check-fm (4 handlers)
+[GIN-debug] GET    /api/other-services       --> service-manage/handler.(*OtherServiceHandler).List-fm (4 handlers)
+[GIN-debug] POST   /api/other-services       --> service-manage/handler.(*OtherServiceHandler).Create-fm (4 handlers)
+[GIN-debug] PUT    /api/other-services/:id   --> service-manage/handler.(*OtherServiceHandler).Update-fm (4 handlers)
+[GIN-debug] DELETE /api/other-services/:id   --> service-manage/handler.(*OtherServiceHandler).Delete-fm (4 handlers)
+[GIN-debug] GET    /api/egress-methods       --> service-manage/handler.(*EgressMethodHandler).List-fm (4 handlers)
+[GIN-debug] POST   /api/egress-methods       --> service-manage/handler.(*EgressMethodHandler).Create-fm (4 handlers)
+[GIN-debug] PUT    /api/egress-methods/:id   --> service-manage/handler.(*EgressMethodHandler).Update-fm (4 handlers)
+[GIN-debug] DELETE /api/egress-methods/:id   --> service-manage/handler.(*EgressMethodHandler).Delete-fm (4 handlers)
+2026-05-14T15:37:38.471+0800	INFO	server/main.go:60	服务启动于 :8080
+[GIN-debug] [WARNING] You trusted all proxies, this is NOT safe. We recommend you to set a value.
+Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.
+[GIN-debug] Listening and serving HTTP on :8080
+[GIN] 2026/05/14 - 15:40:22 | 200 |     34.5435ms |             ::1 | GET      "/api/overview"
+[GIN] 2026/05/14 - 15:43:12 | 200 |     36.2663ms |             ::1 | GET      "/api/overview"
+[GIN] 2026/05/14 - 15:43:45 | 200 |     35.0146ms |             ::1 | GET      "/api/overview"
+[GIN] 2026/05/14 - 15:43:49 | 200 |     20.7242ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 15:43:55 | 200 |      7.4263ms |             ::1 | GET      "/api/other-services?machineId=2&page=1&pageSize=100"
+[GIN] 2026/05/14 - 15:43:55 | 200 |     13.1151ms |             ::1 | GET      "/api/docker-services?machineId=2&page=1&pageSize=100"
+[GIN] 2026/05/14 - 15:43:57 | 200 |       9.806ms |             ::1 | GET      "/api/other-services?machineId=1&page=1&pageSize=100"
+[GIN] 2026/05/14 - 15:43:57 | 200 |     23.9106ms |             ::1 | GET      "/api/docker-services?machineId=1&page=1&pageSize=100"
+[GIN] 2026/05/14 - 15:44:01 | 200 |      6.4321ms |             ::1 | GET      "/api/other-services?machineId=3&page=1&pageSize=100"
+[GIN] 2026/05/14 - 15:44:01 | 200 |      6.4321ms |             ::1 | GET      "/api/docker-services?machineId=3&page=1&pageSize=100"
+[GIN] 2026/05/14 - 15:44:09 | 200 |     22.6414ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 15:44:10 | 200 |       6.421ms |             ::1 | GET      "/api/other-services?machineId=1&page=1&pageSize=100"
+[GIN] 2026/05/14 - 15:44:10 | 200 |      14.528ms |             ::1 | GET      "/api/docker-services?machineId=1&page=1&pageSize=100"
+[GIN] 2026/05/14 - 15:44:19 | 200 |      78.763ms |             ::1 | POST     "/api/machines/3/check-ssh"
+[GIN] 2026/05/14 - 15:44:20 | 200 |    347.8856ms |             ::1 | POST     "/api/machines/2/check-ssh"
+[GIN] 2026/05/14 - 15:44:22 | 200 |    2.0528986s |             ::1 | POST     "/api/machines/1/check-ssh"
+[GIN] 2026/05/14 - 15:44:22 | 200 |     22.7712ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 15:44:36 | 200 |     44.0008ms |             ::1 | PUT      "/api/machines/1"
+[GIN] 2026/05/14 - 15:44:36 | 200 |     23.6497ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 15:44:39 | 200 |     38.0147ms |             ::1 | POST     "/api/machines/3/check-ssh"
+[GIN] 2026/05/14 - 15:44:40 | 200 |    265.2295ms |             ::1 | POST     "/api/machines/2/check-ssh"
+[GIN] 2026/05/14 - 15:44:40 | 200 |     96.9806ms |             ::1 | POST     "/api/machines/1/check-ssh"
+[GIN] 2026/05/14 - 15:44:40 | 200 |     14.9664ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 15:44:49 | 200 |     42.3209ms |             ::1 | DELETE   "/api/machines/2"
+[GIN] 2026/05/14 - 15:44:49 | 200 |     15.9007ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 15:44:51 | 200 |     22.8038ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 15:44:51 | 200 |     16.3947ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 15:44:51 | 200 |     15.9045ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+
+2026/05/14 15:45:13 [31;1mC:/Users/Poke/Documents/trae_projects/PokeServiceManage/server/handler/machine.go:113 [35;1mError 1062 (23000): Duplicate entry '阿里云青岛' for key 'machines.idx_machines_name'
+[0m[33m[32.310ms] [34;1m[rows:0][0m INSERT INTO `machines` (`created_at`,`updated_at`,`deleted_at`,`name`,`ip`,`machine_type`,`cpu`,`memory`,`disk`,`os`,`status`,`ssh_port`,`ssh_user`,`ssh_password`,`remark`) VALUES ('2026-05-14 15:45:13.699','2026-05-14 15:45:13.699',NULL,'阿里云青岛','47.104.217.236','CLOUD','','','','Debian13',1,22,'root','shiwan233','')
+[GIN] 2026/05/14 - 15:45:13 | 200 |     36.5111ms |             ::1 | POST     "/api/machines"
+
+2026/05/14 15:45:24 [31;1mC:/Users/Poke/Documents/trae_projects/PokeServiceManage/server/handler/machine.go:113 [35;1mError 1062 (23000): Duplicate entry '阿里云青岛' for key 'machines.idx_machines_name'
+[0m[33m[35.222ms] [34;1m[rows:0][0m INSERT INTO `machines` (`created_at`,`updated_at`,`deleted_at`,`name`,`ip`,`machine_type`,`cpu`,`memory`,`disk`,`os`,`status`,`ssh_port`,`ssh_user`,`ssh_password`,`remark`) VALUES ('2026-05-14 15:45:23.989','2026-05-14 15:45:23.989',NULL,'阿里云青岛','47.104.217.236','CLOUD','','','','Debian13',1,22,'root','shiwan233','')
+[GIN] 2026/05/14 - 15:45:24 | 200 |     39.5677ms |             ::1 | POST     "/api/machines"
+
+2026/05/14 15:45:32 [31;1mC:/Users/Poke/Documents/trae_projects/PokeServiceManage/server/handler/machine.go:113 [35;1mError 1062 (23000): Duplicate entry '阿里云青岛' for key 'machines.idx_machines_name'
+[0m[33m[36.719ms] [34;1m[rows:0][0m INSERT INTO `machines` (`created_at`,`updated_at`,`deleted_at`,`name`,`ip`,`machine_type`,`cpu`,`memory`,`disk`,`os`,`status`,`ssh_port`,`ssh_user`,`ssh_password`,`remark`) VALUES ('2026-05-14 15:45:32.669','2026-05-14 15:45:32.669',NULL,'阿里云青岛','47.104.217.236','CLOUD','','','','Debian13',1,22,'root','shiwan233','')
+[GIN] 2026/05/14 - 15:45:32 | 200 |     40.3898ms |             ::1 | POST     "/api/machines"
+
+2026/05/14 15:45:35 [31;1mC:/Users/Poke/Documents/trae_projects/PokeServiceManage/server/handler/machine.go:113 [35;1mError 1062 (23000): Duplicate entry '阿里云青岛' for key 'machines.idx_machines_name'
+[0m[33m[26.855ms] [34;1m[rows:0][0m INSERT INTO `machines` (`created_at`,`updated_at`,`deleted_at`,`name`,`ip`,`machine_type`,`cpu`,`memory`,`disk`,`os`,`status`,`ssh_port`,`ssh_user`,`ssh_password`,`remark`) VALUES ('2026-05-14 15:45:35.65','2026-05-14 15:45:35.65',NULL,'阿里云青岛','47.104.217.236','LAN','','','','Debian13',1,22,'root','shiwan233','')
+[GIN] 2026/05/14 - 15:45:35 | 200 |     30.1545ms |             ::1 | POST     "/api/machines"
+[GIN] 2026/05/14 - 15:48:12 | 200 |     16.5118ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 15:48:14 | 200 |     14.3158ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 15:48:16 | 200 |      5.7998ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status=0"
+[GIN] 2026/05/14 - 15:48:16 | 200 |      6.9656ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status=0"
+[GIN] 2026/05/14 - 15:48:17 | 200 |     20.6415ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType="
+[GIN] 2026/05/14 - 15:50:04 | 200 |      20.907ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType="
+[GIN] 2026/05/14 - 15:50:06 | 200 |     22.6052ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType="
+[GIN] 2026/05/14 - 15:50:09 | 200 |     23.1117ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 15:50:09 | 200 |     23.1117ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 15:50:11 | 200 |     23.7313ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 15:50:12 | 200 |     22.8334ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 15:50:12 | 200 |      3.4311ms |             ::1 | POST     "/api/machines/3/discover-services"
+
+2026/05/14 15:50:13 [31;1mC:/Users/Poke/Documents/trae_projects/PokeServiceManage/server/handler/machine.go:464 [35;1mrecord not found
+[0m[33m[2.010ms] [34;1m[rows:0][0m SELECT * FROM `docker_services` WHERE (machine_id = 2 AND name = 'frps') AND `docker_services`.`deleted_at` IS NULL ORDER BY `docker_services`.`id` LIMIT 1
+
+2026/05/14 15:50:13 [31;1mC:/Users/Poke/Documents/trae_projects/PokeServiceManage/server/handler/machine.go:496 [35;1mError 1364 (HY000): Field 'type' doesn't have a default value
+[0m[33m[1.506ms] [34;1m[rows:0][0m INSERT INTO `docker_services` (`created_at`,`updated_at`,`deleted_at`,`machine_id`,`name`,`port`,`protocol`,`docker_source_ip`,`docker_source_port`,`port_mappings`,`status`,`locked`,`is_egress`,`remark`) VALUES ('2026-05-14 15:50:13.543','2026-05-14 15:50:13.543',NULL,2,'frps',0,'TCP','47.104.217.236',0,'[]',1,false,false,'')
+[GIN] 2026/05/14 - 15:50:13 | 200 |    737.1467ms |             ::1 | POST     "/api/machines/2/discover-services"
+[GIN] 2026/05/14 - 15:50:14 | 200 |    1.1809974s |             ::1 | POST     "/api/machines/1/discover-services"
+[GIN] 2026/05/14 - 15:50:14 | 200 |      21.282ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 15:50:21 | 200 |      39.392ms |             ::1 | PUT      "/api/machines/2"
+[GIN] 2026/05/14 - 15:50:21 | 200 |     21.2362ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 15:50:23 | 200 |      4.0659ms |             ::1 | POST     "/api/machines/3/discover-services"
+
+2026/05/14 15:50:24 [31;1mC:/Users/Poke/Documents/trae_projects/PokeServiceManage/server/handler/machine.go:464 [35;1mrecord not found
+[0m[33m[2.859ms] [34;1m[rows:0][0m SELECT * FROM `docker_services` WHERE (machine_id = 2 AND name = 'frps') AND `docker_services`.`deleted_at` IS NULL ORDER BY `docker_services`.`id` LIMIT 1
+
+2026/05/14 15:50:24 [31;1mC:/Users/Poke/Documents/trae_projects/PokeServiceManage/server/handler/machine.go:496 [35;1mError 1364 (HY000): Field 'type' doesn't have a default value
+[0m[33m[3.751ms] [34;1m[rows:0][0m INSERT INTO `docker_services` (`created_at`,`updated_at`,`deleted_at`,`machine_id`,`name`,`port`,`protocol`,`docker_source_ip`,`docker_source_port`,`port_mappings`,`status`,`locked`,`is_egress`,`remark`) VALUES ('2026-05-14 15:50:24.707','2026-05-14 15:50:24.707',NULL,2,'frps',0,'TCP','47.104.217.236',0,'[]',1,false,false,'')
+[GIN] 2026/05/14 - 15:50:24 | 200 |    821.6579ms |             ::1 | POST     "/api/machines/2/discover-services"
+[GIN] 2026/05/14 - 15:50:25 | 200 |    654.7997ms |             ::1 | POST     "/api/machines/1/discover-services"
+[GIN] 2026/05/14 - 15:50:25 | 200 |     21.1664ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 15:50:31 | 200 |      34.065ms |             ::1 | PUT      "/api/machines/3"
+[GIN] 2026/05/14 - 15:50:31 | 200 |     21.3871ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 15:50:34 | 200 |     104.156ms |             ::1 | POST     "/api/machines/3/discover-services"
+
+2026/05/14 15:50:35 [31;1mC:/Users/Poke/Documents/trae_projects/PokeServiceManage/server/handler/machine.go:464 [35;1mrecord not found
+[0m[33m[2.595ms] [34;1m[rows:0][0m SELECT * FROM `docker_services` WHERE (machine_id = 2 AND name = 'frps') AND `docker_services`.`deleted_at` IS NULL ORDER BY `docker_services`.`id` LIMIT 1
+
+2026/05/14 15:50:35 [31;1mC:/Users/Poke/Documents/trae_projects/PokeServiceManage/server/handler/machine.go:496 [35;1mError 1364 (HY000): Field 'type' doesn't have a default value
+[0m[33m[3.081ms] [34;1m[rows:0][0m INSERT INTO `docker_services` (`created_at`,`updated_at`,`deleted_at`,`machine_id`,`name`,`port`,`protocol`,`docker_source_ip`,`docker_source_port`,`port_mappings`,`status`,`locked`,`is_egress`,`remark`) VALUES ('2026-05-14 15:50:35.066','2026-05-14 15:50:35.066',NULL,2,'frps',0,'TCP','47.104.217.236',0,'[]',1,false,false,'')
+[GIN] 2026/05/14 - 15:50:35 | 200 |    789.9356ms |             ::1 | POST     "/api/machines/2/discover-services"
+[GIN] 2026/05/14 - 15:50:35 | 200 |    470.5842ms |             ::1 | POST     "/api/machines/1/discover-services"
+[GIN] 2026/05/14 - 15:50:35 | 200 |     10.4731ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 15:51:47 | 200 |     40.6957ms |             ::1 | PUT      "/api/machines/3"
+[GIN] 2026/05/14 - 15:51:47 | 200 |      22.125ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 15:51:49 | 200 |     99.3738ms |             ::1 | POST     "/api/machines/3/discover-services"
+
+2026/05/14 15:51:50 [31;1mC:/Users/Poke/Documents/trae_projects/PokeServiceManage/server/handler/machine.go:464 [35;1mrecord not found
+[0m[33m[4.161ms] [34;1m[rows:0][0m SELECT * FROM `docker_services` WHERE (machine_id = 2 AND name = 'frps') AND `docker_services`.`deleted_at` IS NULL ORDER BY `docker_services`.`id` LIMIT 1
+
+2026/05/14 15:51:50 [31;1mC:/Users/Poke/Documents/trae_projects/PokeServiceManage/server/handler/machine.go:496 [35;1mError 1364 (HY000): Field 'type' doesn't have a default value
+[0m[33m[3.558ms] [34;1m[rows:0][0m INSERT INTO `docker_services` (`created_at`,`updated_at`,`deleted_at`,`machine_id`,`name`,`port`,`protocol`,`docker_source_ip`,`docker_source_port`,`port_mappings`,`status`,`locked`,`is_egress`,`remark`) VALUES ('2026-05-14 15:51:50.44','2026-05-14 15:51:50.44',NULL,2,'frps',0,'TCP','47.104.217.236',0,'[]',1,false,false,'')
+[GIN] 2026/05/14 - 15:51:50 | 200 |    794.1887ms |             ::1 | POST     "/api/machines/2/discover-services"
+[GIN] 2026/05/14 - 15:51:51 | 200 |     1.343695s |             ::1 | POST     "/api/machines/1/discover-services"
+[GIN] 2026/05/14 - 15:51:51 | 200 |     22.2536ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 15:52:00 | 200 |     35.6356ms |             ::1 | PUT      "/api/machines/2"
+[GIN] 2026/05/14 - 15:52:00 | 200 |     21.5906ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 15:52:02 | 200 |    131.5809ms |             ::1 | POST     "/api/machines/3/check-ssh"
+[GIN] 2026/05/14 - 15:52:02 | 200 |    228.4417ms |             ::1 | POST     "/api/machines/2/check-ssh"
+[GIN] 2026/05/14 - 15:52:03 | 200 |     78.8746ms |             ::1 | POST     "/api/machines/1/check-ssh"
+[GIN] 2026/05/14 - 15:52:03 | 200 |      12.436ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 15:52:04 | 200 |    100.6053ms |             ::1 | POST     "/api/machines/3/discover-services"
+
+2026/05/14 15:52:05 [31;1mC:/Users/Poke/Documents/trae_projects/PokeServiceManage/server/handler/machine.go:464 [35;1mrecord not found
+[0m[33m[3.488ms] [34;1m[rows:0][0m SELECT * FROM `docker_services` WHERE (machine_id = 2 AND name = 'frps') AND `docker_services`.`deleted_at` IS NULL ORDER BY `docker_services`.`id` LIMIT 1
+
+2026/05/14 15:52:05 [31;1mC:/Users/Poke/Documents/trae_projects/PokeServiceManage/server/handler/machine.go:496 [35;1mError 1364 (HY000): Field 'type' doesn't have a default value
+[0m[33m[3.503ms] [34;1m[rows:0][0m INSERT INTO `docker_services` (`created_at`,`updated_at`,`deleted_at`,`machine_id`,`name`,`port`,`protocol`,`docker_source_ip`,`docker_source_port`,`port_mappings`,`status`,`locked`,`is_egress`,`remark`) VALUES ('2026-05-14 15:52:05.413','2026-05-14 15:52:05.413',NULL,2,'frps',0,'TCP','47.104.217.236',0,'[]',1,false,false,'')
+[GIN] 2026/05/14 - 15:52:05 | 200 |    896.2877ms |             ::1 | POST     "/api/machines/2/discover-services"
+[GIN] 2026/05/14 - 15:52:06 | 200 |    537.2275ms |             ::1 | POST     "/api/machines/1/discover-services"
+[GIN] 2026/05/14 - 15:52:06 | 200 |     21.6533ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 15:52:08 | 200 |      6.7095ms |             ::1 | GET      "/api/other-services?machineId=2&page=1&pageSize=100"
+[GIN] 2026/05/14 - 15:52:08 | 200 |      7.2121ms |             ::1 | GET      "/api/docker-services?machineId=2&page=1&pageSize=100"
+[GIN] 2026/05/14 - 15:52:12 | 200 |     45.0531ms |             ::1 | DELETE   "/api/machines/2"
+[GIN] 2026/05/14 - 15:52:12 | 200 |      17.426ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 15:53:13 | 200 |     13.9664ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 15:53:13 | 200 |      17.128ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 15:53:15 | 200 |      7.5412ms |             ::1 | GET      "/api/other-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 15:53:15 | 200 |     16.8262ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+
+2026/05/14 15:56:26 [31;1mC:/Users/Poke/Documents/trae_projects/PokeServiceManage/server/handler/machine.go:50 [35;1mError 1146 (42S02): Table 'service_manage.machines' doesn't exist
+[0m[33m[2.868ms] [34;1m[rows:0][0m SELECT count(*) FROM `machines` WHERE `machines`.`deleted_at` IS NULL
+
+2026/05/14 15:56:26 [31;1mC:/Users/Poke/Documents/trae_projects/PokeServiceManage/server/handler/other_service.go:45 [35;1mError 1146 (42S02): Table 'service_manage.other_services' doesn't exist
+[0m[33m[2.868ms] [34;1m[rows:0][0m SELECT count(*) FROM `other_services` WHERE `other_services`.`deleted_at` IS NULL
+[GIN] 2026/05/14 - 15:56:26 | 200 |      2.8675ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 15:56:26 | 200 |      2.8675ms |             ::1 | GET      "/api/other-services?page=1&pageSize=10&keyword=&machineId=&status="
 ^C
+2026/05/14 16:00:53 [32mC:/Users/Poke/Documents/trae_projects/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[417.155ms] [33m[rows:0][35m CREATE TABLE `machines` (`id` bigint unsigned AUTO_INCREMENT,`created_at` datetime(3) NULL,`updated_at` datetime(3) NULL,`deleted_at` datetime(3) NULL,`name` varchar(64) NOT NULL,`ip` varchar(45) NOT NULL,`machine_type` varchar(16) NOT NULL,`cpu` varchar(64) DEFAULT '',`memory` varchar(32) DEFAULT '',`disk` varchar(64) DEFAULT '',`os` varchar(64) DEFAULT '',`status` tinyint DEFAULT 1,`ssh_port` bigint DEFAULT 22,`ssh_user` varchar(32) DEFAULT 'root',`ssh_password` varchar(128),`remark` text,PRIMARY KEY (`id`),INDEX `idx_machines_deleted_at` (`deleted_at`),UNIQUE INDEX `idx_machines_name` (`name`))[0m
+
+2026/05/14 16:00:53 [32mC:/Users/Poke/Documents/trae_projects/PokeServiceManage/server/main.go:46 [33mSLOW SQL >= 200ms
+[0m[31;1m[220.048ms] [33m[rows:0][35m CREATE TABLE `other_services` (`id` bigint unsigned AUTO_INCREMENT,`created_at` datetime(3) NULL,`updated_at` datetime(3) NULL,`deleted_at` datetime(3) NULL,`machine_id` bigint unsigned NOT NULL,`name` varchar(64) NOT NULL,`port` bigint NOT NULL,`protocol` varchar(8) DEFAULT 'TCP',`status` tinyint DEFAULT 1,`remark` text,PRIMARY KEY (`id`),INDEX `idx_other_services_deleted_at` (`deleted_at`),INDEX `idx_other_services_machine_id` (`machine_id`),CONSTRAINT `fk_other_services_machine` FOREIGN KEY (`machine_id`) REFERENCES `machines`(`id`))[0m
+2026-05-14T16:00:54.082+0800	INFO	server/main.go:55	数据库表初始化完成
+[GIN-debug] [WARNING] Creating an Engine instance with the Logger and Recovery middleware already attached.
+
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] GET    /api/overview             --> service-manage/handler.(*MachineHandler).Overview-fm (4 handlers)
+[GIN-debug] GET    /api/machines             --> service-manage/handler.(*MachineHandler).List-fm (4 handlers)
+[GIN-debug] GET    /api/machines/:id         --> service-manage/handler.(*MachineHandler).Get-fm (4 handlers)
+[GIN-debug] POST   /api/machines             --> service-manage/handler.(*MachineHandler).Create-fm (4 handlers)
+[GIN-debug] PUT    /api/machines/:id         --> service-manage/handler.(*MachineHandler).Update-fm (4 handlers)
+[GIN-debug] DELETE /api/machines/:id         --> service-manage/handler.(*MachineHandler).Delete-fm (4 handlers)
+[GIN-debug] POST   /api/machines/:id/check-ssh --> service-manage/handler.(*MachineHandler).CheckSSH-fm (4 handlers)
+[GIN-debug] POST   /api/machines/:id/discover-services --> service-manage/handler.(*MachineHandler).DiscoverServices-fm (4 handlers)
+[GIN-debug] GET    /api/docker-services      --> service-manage/handler.(*DockerServiceHandler).List-fm (4 handlers)
+[GIN-debug] POST   /api/docker-services      --> service-manage/handler.(*DockerServiceHandler).Create-fm (4 handlers)
+[GIN-debug] PUT    /api/docker-services/:id  --> service-manage/handler.(*DockerServiceHandler).Update-fm (4 handlers)
+[GIN-debug] DELETE /api/docker-services/:id  --> service-manage/handler.(*DockerServiceHandler).Delete-fm (4 handlers)
+[GIN-debug] POST   /api/docker-services/:id/check --> service-manage/handler.(*DockerServiceHandler).Check-fm (4 handlers)
+[GIN-debug] GET    /api/other-services       --> service-manage/handler.(*OtherServiceHandler).List-fm (4 handlers)
+[GIN-debug] POST   /api/other-services       --> service-manage/handler.(*OtherServiceHandler).Create-fm (4 handlers)
+[GIN-debug] PUT    /api/other-services/:id   --> service-manage/handler.(*OtherServiceHandler).Update-fm (4 handlers)
+[GIN-debug] DELETE /api/other-services/:id   --> service-manage/handler.(*OtherServiceHandler).Delete-fm (4 handlers)
+[GIN-debug] GET    /api/egress-methods       --> service-manage/handler.(*EgressMethodHandler).List-fm (4 handlers)
+[GIN-debug] POST   /api/egress-methods       --> service-manage/handler.(*EgressMethodHandler).Create-fm (4 handlers)
+[GIN-debug] PUT    /api/egress-methods/:id   --> service-manage/handler.(*EgressMethodHandler).Update-fm (4 handlers)
+[GIN-debug] DELETE /api/egress-methods/:id   --> service-manage/handler.(*EgressMethodHandler).Delete-fm (4 handlers)
+2026-05-14T16:00:54.084+0800	INFO	server/main.go:60	服务启动于 :8080
+[GIN-debug] [WARNING] You trusted all proxies, this is NOT safe. We recommend you to set a value.
+Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.
+[GIN-debug] Listening and serving HTTP on :8080
+[GIN] 2026/05/14 - 16:01:16 | 200 |      7.5103ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 16:01:43 | 200 |     18.6927ms |             ::1 | GET      "/api/overview"
+[GIN] 2026/05/14 - 16:01:49 | 200 |     17.6281ms |             ::1 | GET      "/api/overview"
+[GIN] 2026/05/14 - 16:01:52 | 200 |      5.3213ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 16:02:41 | 200 |     37.0896ms |             ::1 | POST     "/api/machines"
+[GIN] 2026/05/14 - 16:02:42 | 200 |      9.6891ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+
+2026/05/14 16:02:42 [31;1mC:/Users/Poke/Documents/trae_projects/PokeServiceManage/server/handler/machine.go:464 [35;1mrecord not found
+[0m[33m[2.921ms] [34;1m[rows:0][0m SELECT * FROM `docker_services` WHERE (machine_id = 1 AND name = 'magicpush') AND `docker_services`.`deleted_at` IS NULL ORDER BY `docker_services`.`id` LIMIT 1
+
+2026/05/14 16:02:42 [31;1mC:/Users/Poke/Documents/trae_projects/PokeServiceManage/server/handler/machine.go:464 [35;1mrecord not found
+[0m[33m[3.578ms] [34;1m[rows:0][0m SELECT * FROM `docker_services` WHERE (machine_id = 1 AND name = 'mysql') AND `docker_services`.`deleted_at` IS NULL ORDER BY `docker_services`.`id` LIMIT 1
+
+2026/05/14 16:02:42 [31;1mC:/Users/Poke/Documents/trae_projects/PokeServiceManage/server/handler/machine.go:464 [35;1mrecord not found
+[0m[33m[3.427ms] [34;1m[rows:0][0m SELECT * FROM `docker_services` WHERE (machine_id = 1 AND name = 'certimate') AND `docker_services`.`deleted_at` IS NULL ORDER BY `docker_services`.`id` LIMIT 1
+
+2026/05/14 16:02:42 [31;1mC:/Users/Poke/Documents/trae_projects/PokeServiceManage/server/handler/machine.go:464 [35;1mrecord not found
+[0m[33m[2.636ms] [34;1m[rows:0][0m SELECT * FROM `docker_services` WHERE (machine_id = 1 AND name = '3xui') AND `docker_services`.`deleted_at` IS NULL ORDER BY `docker_services`.`id` LIMIT 1
+
+2026/05/14 16:02:42 [31;1mC:/Users/Poke/Documents/trae_projects/PokeServiceManage/server/handler/machine.go:464 [35;1mrecord not found
+[0m[33m[4.246ms] [34;1m[rows:0][0m SELECT * FROM `docker_services` WHERE (machine_id = 1 AND name = 'frpc') AND `docker_services`.`deleted_at` IS NULL ORDER BY `docker_services`.`id` LIMIT 1
+[GIN] 2026/05/14 - 16:02:45 | 200 |     82.7198ms |             ::1 | POST     "/api/machines/1/check-ssh"
+[GIN] 2026/05/14 - 16:02:45 | 200 |     11.3383ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 16:02:49 | 200 |    522.6786ms |             ::1 | POST     "/api/machines/1/discover-services"
+[GIN] 2026/05/14 - 16:02:49 | 200 |     10.5398ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 16:02:52 | 200 |      6.4676ms |             ::1 | GET      "/api/other-services?machineId=1&page=1&pageSize=100"
+[GIN] 2026/05/14 - 16:02:52 | 200 |     22.6725ms |             ::1 | GET      "/api/docker-services?machineId=1&page=1&pageSize=100"
+[GIN] 2026/05/14 - 16:02:56 | 200 |     11.0507ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 16:02:56 | 200 |     23.1393ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 16:03:32 | 200 |    106.3259ms |             ::1 | PUT      "/api/docker-services/4"
+[GIN] 2026/05/14 - 16:03:33 | 200 |     80.4102ms |             ::1 | PUT      "/api/docker-services/5"
+[GIN] 2026/05/14 - 16:03:36 | 200 |     30.3217ms |             ::1 | PUT      "/api/docker-services/4"
+[GIN] 2026/05/14 - 16:03:38 | 200 |     22.7524ms |             ::1 | PUT      "/api/docker-services/5"
+[GIN] 2026/05/14 - 16:03:40 | 200 |     11.6033ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 16:04:05 | 200 |     34.5051ms |             ::1 | POST     "/api/machines"
+[GIN] 2026/05/14 - 16:04:06 | 200 |     16.4411ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+
+2026/05/14 16:04:06 [31;1mC:/Users/Poke/Documents/trae_projects/PokeServiceManage/server/handler/machine.go:464 [35;1mrecord not found
+[0m[33m[3.602ms] [34;1m[rows:0][0m SELECT * FROM `docker_services` WHERE (machine_id = 2 AND name = 'frps') AND `docker_services`.`deleted_at` IS NULL ORDER BY `docker_services`.`id` LIMIT 1
+[GIN] 2026/05/14 - 16:04:09 | 200 |    845.6371ms |             ::1 | POST     "/api/machines/2/discover-services"
+[GIN] 2026/05/14 - 16:04:10 | 200 |    1.0105284s |             ::1 | POST     "/api/machines/1/discover-services"
+[GIN] 2026/05/14 - 16:04:10 | 200 |       7.843ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 16:04:13 | 200 |      6.4782ms |             ::1 | GET      "/api/other-services?machineId=2&page=1&pageSize=100"
+[GIN] 2026/05/14 - 16:04:13 | 200 |     11.6586ms |             ::1 | GET      "/api/docker-services?machineId=2&page=1&pageSize=100"
+[GIN] 2026/05/14 - 16:04:16 | 200 |     16.1502ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 16:04:16 | 200 |     23.4149ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 16:04:41 | 200 |     36.6819ms |             ::1 | PUT      "/api/docker-services/6"
+[GIN] 2026/05/14 - 16:04:42 | 200 |     27.1086ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 16:04:47 | 200 |     36.6223ms |             ::1 | PUT      "/api/docker-services/6"
+[GIN] 2026/05/14 - 16:04:48 | 200 |     15.5069ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 16:04:49 | 200 |    783.1614ms |             ::1 | POST     "/api/machines/2/discover-services"
+[GIN] 2026/05/14 - 16:04:50 | 200 |    606.2306ms |             ::1 | POST     "/api/machines/1/discover-services"
+[GIN] 2026/05/14 - 16:04:50 | 200 |      15.211ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 16:04:52 | 200 |      5.1081ms |             ::1 | GET      "/api/other-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 16:04:52 | 200 |     17.2588ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 16:04:52 | 200 |     15.3113ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 16:04:52 | 200 |     22.5519ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 16:04:59 | 200 |     34.6118ms |             ::1 | PUT      "/api/docker-services/6"
+[GIN] 2026/05/14 - 16:05:01 | 200 |     17.3036ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 16:05:02 | 200 |    875.9839ms |             ::1 | POST     "/api/machines/2/discover-services"
+[GIN] 2026/05/14 - 16:05:03 | 200 |    633.6193ms |             ::1 | POST     "/api/machines/1/discover-services"
+[GIN] 2026/05/14 - 16:05:03 | 200 |     15.1648ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 16:05:03 | 200 |     18.3462ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 16:05:03 | 200 |     26.1381ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 16:05:07 | 200 |     19.8846ms |             ::1 | PUT      "/api/docker-services/6"
+[GIN] 2026/05/14 - 16:05:17 | 200 |     40.6943ms |             ::1 | PUT      "/api/docker-services/6"
+[GIN] 2026/05/14 - 16:05:17 | 200 |     23.9553ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 16:05:30 | 200 |      38.034ms |             ::1 | PUT      "/api/docker-services/6"
+[GIN] 2026/05/14 - 16:05:31 | 200 |      24.742ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 16:06:24 | 200 |       6.361ms |             ::1 | GET      "/api/other-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 16:06:24 | 200 |      17.625ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 16:06:25 | 200 |        3.33ms |             ::1 | GET      "/api/other-services?page=1&pageSize=200"
+[GIN] 2026/05/14 - 16:06:25 | 200 |        3.33ms |             ::1 | GET      "/api/egress-methods?page=1&pageSize=10"
+[GIN] 2026/05/14 - 16:06:25 | 200 |     13.4974ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=200"
+[GIN] 2026/05/14 - 16:06:28 | 200 |     19.0749ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 16:06:28 | 200 |     26.3873ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 16:06:43 | 200 |      4.6342ms |             ::1 | GET      "/api/other-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 16:06:43 | 200 |     16.6817ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 16:06:44 | 200 |      5.8943ms |             ::1 | GET      "/api/egress-methods?page=1&pageSize=10"
+[GIN] 2026/05/14 - 16:06:44 | 200 |      5.8943ms |             ::1 | GET      "/api/other-services?page=1&pageSize=200"
+[GIN] 2026/05/14 - 16:06:44 | 200 |     23.7978ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=200"
+[GIN] 2026/05/14 - 16:06:45 | 200 |     10.5334ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 16:06:45 | 200 |     14.5121ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 16:06:50 | 200 |      6.8958ms |             ::1 | GET      "/api/egress-methods?page=1&pageSize=10"
+[GIN] 2026/05/14 - 16:06:50 | 200 |      6.8958ms |             ::1 | GET      "/api/other-services?page=1&pageSize=200"
+[GIN] 2026/05/14 - 16:06:50 | 200 |     25.7458ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=200"
+[GIN] 2026/05/14 - 16:07:19 | 200 |     38.6995ms |             ::1 | POST     "/api/egress-methods"
+[GIN] 2026/05/14 - 16:07:19 | 200 |      9.6208ms |             ::1 | GET      "/api/egress-methods?page=1&pageSize=10"
+[GIN] 2026/05/14 - 16:07:44 | 200 |     37.0379ms |             ::1 | PUT      "/api/egress-methods/1"
+[GIN] 2026/05/14 - 16:07:44 | 200 |     16.8543ms |             ::1 | GET      "/api/egress-methods?page=1&pageSize=10"
+[GIN] 2026/05/14 - 16:08:27 | 200 |     26.3394ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 16:08:27 | 200 |     16.4373ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 16:08:28 | 200 |     17.3895ms |             ::1 | GET      "/api/machines?page=1&pageSize=10&keyword=&machineType=&status="
+[GIN] 2026/05/14 - 16:08:33 | 200 |     15.9504ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 16:08:33 | 200 |     24.8878ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+
+2026/05/14 16:08:40 [31;1mC:/Users/Poke/Documents/trae_projects/PokeServiceManage/server/handler/docker_service.go:120 [35;1mError 1048 (23000): Column 'port' cannot be null
+[0m[33m[2.555ms] [34;1m[rows:0][0m UPDATE `docker_services` SET `docker_source_ip`='47.104.217.236',`docker_source_port`=NULL,`is_egress`=true,`machine_id`=2,`name`='frps',`port`=NULL,`port_mappings`='[]',`protocol`='TCP',`remark`='',`status`=1,`updated_at`='2026-05-14 16:08:40.689' WHERE `docker_services`.`deleted_at` IS NULL AND `id` = 6
+[GIN] 2026/05/14 - 16:08:40 | 200 |      6.6285ms |             ::1 | PUT      "/api/docker-services/6"
+[GIN] 2026/05/14 - 16:08:44 | 200 |     35.7498ms |             ::1 | PUT      "/api/docker-services/6"
+[GIN] 2026/05/14 - 16:08:44 | 200 |     24.8907ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 16:08:48 | 200 |      6.9096ms |             ::1 | GET      "/api/other-services?page=1&pageSize=10&keyword=&machineId=&status="
+[GIN] 2026/05/14 - 16:08:48 | 200 |     17.4565ms |             ::1 | GET      "/api/machines?page=1&pageSize=200"
+[GIN] 2026/05/14 - 16:08:48 | 200 |      5.6194ms |             ::1 | GET      "/api/other-services?page=1&pageSize=200"
+[GIN] 2026/05/14 - 16:08:48 | 200 |     15.9047ms |             ::1 | GET      "/api/egress-methods?page=1&pageSize=10"
+[GIN] 2026/05/14 - 16:08:48 | 200 |     23.8989ms |             ::1 | GET      "/api/docker-services?page=1&pageSize=200"
+[GIN] 2026/05/14 - 16:08:49 | 200 |     17.0754ms |             ::1 | GET      "/api/egress-methods?page=1&pageSize=10"
