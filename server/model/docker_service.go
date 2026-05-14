@@ -13,8 +13,6 @@ type DockerService struct {
 	Locked           bool   `gorm:"default:false" json:"locked"`
 	IsEgress         bool   `gorm:"default:false" json:"isEgress"`
 	Remark           string `gorm:"type:text" json:"remark"`
-
-	Machine Machine `gorm:"foreignKey:MachineID" json:"machine,omitempty"`
 }
 
 func (DockerService) TableName() string {

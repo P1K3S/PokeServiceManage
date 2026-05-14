@@ -1,9 +1,5 @@
 package model
 
-import (
-	"gorm.io/gorm"
-)
-
 type Machine struct {
 	BaseModel
 	Name        string `gorm:"size:64;uniqueIndex;not null" json:"name"`
@@ -22,11 +18,4 @@ type Machine struct {
 
 func (Machine) TableName() string {
 	return "machines"
-}
-
-func (m *Machine) AfterFind(tx *gorm.DB) error {
-	if m.Remark == "" {
-		m.Remark = ""
-	}
-	return nil
 }

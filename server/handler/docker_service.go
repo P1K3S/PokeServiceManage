@@ -27,10 +27,7 @@ func (h *DockerServiceHandler) List(c *gin.Context) {
 	machineIDStr := c.Query("machineId")
 	statusStr := c.Query("status")
 
-	query := h.DB.Model(&model.DockerService{}).
-		Preload("Machine", func(db *gorm.DB) *gorm.DB {
-			return db.Unscoped()
-		})
+	query := h.DB.Model(&model.DockerService{})
 
 	if keyword != "" {
 		query = query.Where("docker_services.name LIKE ?", "%"+keyword+"%")
@@ -64,12 +61,13 @@ func (h *DockerServiceHandler) List(c *gin.Context) {
 	var result []DockerServiceVO
 	for _, s := range services {
 		var egressCount int64
-		h.DB.Model(&model.EgressMethod{}).Where("service_id = ?", s.ID).Count(&egressCount)
+		h.DB.Model(&model.EgressMethod{}).Where("service_id = ? AND service_type = ?", s.ID, "docker").Count(&egressCount)
+		var machine model.Machine
 		machineName := ""
 		machineIP := ""
-		if s.Machine.ID != 0 {
-			machineName = s.Machine.Name
-			machineIP = s.Machine.IP
+		if err := h.DB.Unscoped().First(&machine, s.MachineID).Error; err == nil {
+			machineName = machine.Name
+			machineIP = machine.IP
 		}
 		result = append(result, DockerServiceVO{
 			DockerService: s,
@@ -134,7 +132,7 @@ func (h *DockerServiceHandler) Delete(c *gin.Context) {
 
 	tx := h.DB.Begin()
 
-	if err := tx.Where("service_id = ?", id).Delete(&model.EgressMethod{}).Error; err != nil {
+	if err := tx.Where("service_id = ? AND service_type = ?", id, "docker").Delete(&model.EgressMethod{}).Error; err != nil {
 		tx.Rollback()
 		jsonError(c, "删除关联出站方式失败")
 		return

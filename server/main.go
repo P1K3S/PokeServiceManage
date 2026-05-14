@@ -52,9 +52,7 @@ func main() {
 		logger.Log.Sugar().Fatalf("自动建表失败: %v", err)
 	}
 
-	if db.Migrator().HasColumn(&model.EgressMethod{}, "method_type") {
-		db.Migrator().DropColumn(&model.EgressMethod{}, "method_type")
-	}
+	cleanupDatabase(db)
 
 	logger.Log.Info("数据库表初始化完成")
 
@@ -64,5 +62,27 @@ func main() {
 	logger.Log.Sugar().Infof("服务启动于 %s", addr)
 	if err := r.Run(addr); err != nil {
 		logger.Log.Sugar().Fatalf("服务启动失败: %v", err)
+	}
+}
+
+func cleanupDatabase(db *gorm.DB) {
+	dropForeignKeyIfExists(db, "egress_methods", "fk_egress_methods_docker_service")
+	dropForeignKeyIfExists(db, "egress_methods", "fk_egress_methods_egress_service")
+	dropForeignKeyIfExists(db, "docker_services", "fk_docker_services_machine")
+	dropForeignKeyIfExists(db, "other_services", "fk_other_services_machine")
+
+	if db.Migrator().HasColumn(&model.EgressMethod{}, "method_type") {
+		db.Migrator().DropColumn(&model.EgressMethod{}, "method_type")
+	}
+}
+
+func dropForeignKeyIfExists(db *gorm.DB, table, fkName string) {
+	var count int64
+	db.Raw(
+		"SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND CONSTRAINT_NAME = ? AND CONSTRAINT_TYPE = 'FOREIGN KEY'",
+		table, fkName,
+	).Scan(&count)
+	if count > 0 {
+		db.Exec(fmt.Sprintf("ALTER TABLE %s DROP FOREIGN KEY %s", table, fkName))
 	}
 }

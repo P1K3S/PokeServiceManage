@@ -113,6 +113,8 @@ GET /machines
 }
 ```
 
+> **注意**：列表响应中 `sshPassword` 字段会被清空，不会返回。
+
 ---
 
 ### 1.2 获取主机详情
@@ -159,6 +161,8 @@ POST /machines
 | sshPassword | string | 否 | SSH密码 |
 | remark | string | 否 | 备注 |
 
+> **注意**：新增主机后，若配置了SSH信息，会自动异步执行Docker服务发现。
+
 ---
 
 ### 1.4 编辑主机
@@ -172,9 +176,12 @@ PUT /machines/:id
 ```json
 {
   "name": "办公内网-Node2-Updated",
+  "ip": "192.168.1.200",
   "sshPort": 2222
 }
 ```
+
+> **注意**：若修改了主机IP，系统会自动同步该主机关联的所有出站方式中的IP地址。
 
 ---
 
@@ -184,7 +191,7 @@ PUT /machines/:id
 DELETE /machines/:id
 ```
 
-> **注意**：删除主机会同时删除关联的所有服务和出站方式
+> **注意**：删除主机会同时删除关联的所有Docker服务、其他服务以及对应的出站方式。
 
 ---
 
@@ -219,9 +226,10 @@ POST /machines/:id/discover-services
 ```json
 {
   "code": 0,
-  "message": "检测完成：更新 5 个 Docker 服务",
+  "message": "检测完成，更新 5 个 Docker 服务",
   "data": {
-    "updated": 5
+    "count": 5,
+    "message": "检测完成，更新 5 个 Docker 服务"
   }
 }
 ```
@@ -258,23 +266,38 @@ GET /docker-services
         "id": 1,
         "machineId": 1,
         "machineName": "办公内网-Node1",
+        "machineIp": "192.168.1.101",
         "name": "Nginx",
         "port": 80,
         "protocol": "TCP",
         "dockerSourceIp": "172.17.0.2",
         "dockerSourcePort": 80,
-        "portMappings": "[{\"hostPort\":80,\"containerPort\":80,\"protocol\":\"TCP\"}]",
-        "locked": 0,
+        "portMappings": "[{\"hostPort\":\"80\",\"containerPort\":\"80\",\"protocol\":\"TCP\"}]",
+        "locked": false,
+        "isEgress": false,
+        "egressCount": 0,
         "status": 1,
         "remark": "前端代理",
         "createdAt": "2026-05-13T10:00:00+08:00",
         "updatedAt": "2026-05-13T10:00:00+08:00"
       }
     ],
-    "total": 1
+    "total": 1,
+    "page": 1,
+    "pageSize": 10
   }
 }
 ```
+
+> **默认排序**：按宿主机端口（port）升序
+
+**额外响应字段说明：**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| machineName | string | 所属主机名称 |
+| machineIp | string | 所属主机IP |
+| egressCount | int | 关联出站方式数量 |
 
 ---
 
@@ -294,10 +317,23 @@ POST /docker-services
   "protocol": "TCP",
   "dockerSourceIp": "172.17.0.2",
   "dockerSourcePort": 80,
-  "portMappings": "[{\"hostPort\":80,\"containerPort\":80,\"protocol\":\"TCP\"}]",
+  "portMappings": "[{\"hostPort\":\"80\",\"containerPort\":\"80\",\"protocol\":\"TCP\"}]",
+  "isEgress": false,
   "status": 1
 }
 ```
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| machineId | int | 是 | 所属主机ID |
+| name | string | 是 | 服务名称 |
+| port | int | 是 | 宿主机端口 |
+| protocol | string | 否 | 协议，默认TCP |
+| dockerSourceIp | string | 否 | Docker容器IP |
+| dockerSourcePort | int | 否 | Docker源端口 |
+| portMappings | string | 否 | 端口映射JSON |
+| isEgress | bool | 否 | 是否为出站服务，默认false |
+| status | int | 否 | 状态，默认1 |
 
 ---
 
@@ -307,6 +343,16 @@ POST /docker-services
 PUT /docker-services/:id
 ```
 
+**请求体：**（部分更新）
+
+```json
+{
+  "name": "Nginx-Updated",
+  "isEgress": true,
+  "locked": true
+}
+```
+
 ---
 
 ### 2.4 删除Docker服务
@@ -314,6 +360,8 @@ PUT /docker-services/:id
 ```
 DELETE /docker-services/:id
 ```
+
+> **注意**：删除Docker服务会同时删除关联的所有出站方式。
 
 ---
 
@@ -328,26 +376,11 @@ POST /docker-services/:id/check
 ```json
 {
   "code": 0,
-  "message": "success",
+  "message": "Docker 容器运行中",
   "data": {
-    "status": 1
+    "status": 1,
+    "message": "Docker 容器运行中"
   }
-}
-```
-
----
-
-### 2.6 锁定/解锁服务
-
-```
-PUT /docker-services/:id/lock
-```
-
-**请求体：**
-
-```json
-{
-  "locked": 1
 }
 ```
 
@@ -370,6 +403,42 @@ GET /other-services
 | keyword | string | 否 | 服务名称模糊搜索 |
 | machineId | int | 否 | 按所属主机筛选 |
 | status | int | 否 | 筛选：1-运行中 0-已停止 |
+
+**响应示例：**
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "list": [
+      {
+        "id": 1,
+        "machineId": 1,
+        "machineName": "办公内网-Node1",
+        "machineIp": "192.168.1.101",
+        "name": "Custom Service",
+        "port": 8080,
+        "protocol": "TCP",
+        "status": 1,
+        "remark": "",
+        "createdAt": "2026-05-13T10:00:00+08:00",
+        "updatedAt": "2026-05-13T10:00:00+08:00"
+      }
+    ],
+    "total": 1,
+    "page": 1,
+    "pageSize": 10
+  }
+}
+```
+
+**额外响应字段说明：**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| machineName | string | 所属主机名称 |
+| machineIp | string | 所属主机IP |
 
 ---
 
@@ -407,6 +476,8 @@ PUT /other-services/:id
 DELETE /other-services/:id
 ```
 
+> **注意**：删除其他服务会同时删除关联的所有出站方式。
+
 ---
 
 ## 四、出站方式管理接口
@@ -423,10 +494,55 @@ GET /egress-methods
 |------|------|------|------|
 | page | int | 否 | 页码，默认 1 |
 | pageSize | int | 否 | 每页条数，默认 10 |
-| serviceId | int | 否 | 按所属服务筛选 |
-| serviceType | string | 否 | DOCKER / OTHER |
-| methodType | string | 否 | FRP / PORT_MAPPING / VPN / DIRECT |
+| serviceId | int | 否 | 按所属服务ID筛选 |
+| isDirect | string | 否 | 筛选："true"-本机直连 / "false"-出站服务 |
 | status | int | 否 | 筛选：1-启用 0-停用 |
+
+> **默认排序**：按公网端口（public_port）升序
+
+**响应示例：**
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "list": [
+      {
+        "id": 1,
+        "serviceId": 1,
+        "serviceType": "docker",
+        "egressServiceId": 2,
+        "isDirect": false,
+        "serviceName": "mysql",
+        "machineName": "Poke-NAS",
+        "egressServiceName": "frps-阿里云青岛",
+        "proxyName": "Poke-NAS.9243_MYSQL",
+        "publicIp": "123.45.67.89",
+        "publicPort": 9243,
+        "internalIp": "192.168.1.101",
+        "internalPort": 3306,
+        "protocol": "TCP",
+        "status": 1,
+        "remark": "",
+        "createdAt": "2026-05-13T10:00:00+08:00",
+        "updatedAt": "2026-05-13T10:00:00+08:00"
+      }
+    ],
+    "total": 1,
+    "page": 1,
+    "pageSize": 10
+  }
+}
+```
+
+**额外响应字段说明：**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| serviceName | string | 所属服务名称 |
+| machineName | string | 所属服务的主机名称 |
+| egressServiceName | string | 出站服务名称（格式：服务名-主机名），本机直连时显示"本机直连" |
 
 ---
 
@@ -442,7 +558,8 @@ POST /egress-methods
 {
   "serviceId": 1,
   "serviceType": "DOCKER",
-  "methodType": "FRP",
+  "isDirect": false,
+  "egressServiceId": 2,
   "proxyName": "nginx-frp",
   "publicIp": "123.45.67.89",
   "publicPort": 8080,
@@ -453,12 +570,44 @@ POST /egress-methods
 }
 ```
 
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| serviceId | int | 是 | 所属服务ID |
+| serviceType | string | 是 | 服务类型：DOCKER / OTHER |
+| isDirect | bool | 是 | 是否本机直连 |
+| egressServiceId | int | 条件必填 | 出站服务ID（isDirect=false时必填，且该服务必须标记为出站服务） |
+| proxyName | string | 否 | 代理/隧道名称 |
+| publicIp | string | 是 | 公网IP |
+| publicPort | int | 是 | 公网端口 |
+| internalIp | string | 是 | 内网IP |
+| internalPort | int | 是 | 内网端口 |
+| protocol | string | 否 | 协议，默认TCP |
+| status | int | 否 | 状态，默认1 |
+| remark | string | 否 | 备注 |
+
+**出站方式类型说明：**
+
+| 类型 | isDirect | egressServiceId | 说明 |
+|------|----------|-----------------|------|
+| 本机直连 | true | 0 | 服务所在主机即为公网出口，公网IP=内网IP=主机IP |
+| 出站服务 | false | >0 | 通过标记为出站服务的Docker服务转发，公网IP=出站服务主机IP |
+
 ---
 
 ### 4.3 编辑出站方式
 
 ```
 PUT /egress-methods/:id
+```
+
+**请求体：**（部分更新）
+
+```json
+{
+  "proxyName": "nginx-frp-updated",
+  "publicPort": 9090,
+  "status": 1
+}
 ```
 
 ---
@@ -504,6 +653,8 @@ GET /overview
 }
 ```
 
+> **注意**：`serviceTotal` 和 `serviceRunning` 包含 Docker 服务和其他服务的总和。
+
 ---
 
 ## 六、枚举值定义
@@ -515,14 +666,19 @@ GET /overview
 | LAN | 局域网主机 |
 | CLOUD | 云服务器 |
 
-### methodType（出站方式类型）
+### serviceType（出站方式所属服务类型）
 
 | 值 | 说明 |
 |----|------|
-| FRP | FRP 内网穿透 |
-| PORT_MAPPING | 端口映射 |
-| VPN | VPN 接入 |
-| DIRECT | 直接公网访问 |
+| docker | Docker服务 |
+| other | 其他服务 |
+
+### isDirect（出站方式类型）
+
+| 值 | 说明 |
+|----|------|
+| true | 本机直连 |
+| false | 出站服务 |
 
 ### protocol（协议）
 
@@ -560,7 +716,6 @@ GET /overview
 | PUT | /docker-services/:id | 编辑Docker服务 |
 | DELETE | /docker-services/:id | 删除Docker服务 |
 | POST | /docker-services/:id/check | 检测服务状态 |
-| PUT | /docker-services/:id/lock | 锁定/解锁服务 |
 | GET | /other-services | 获取其他服务列表 |
 | POST | /other-services | 新增其他服务 |
 | PUT | /other-services/:id | 编辑其他服务 |

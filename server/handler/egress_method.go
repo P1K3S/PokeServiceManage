@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"fmt"
 	"strconv"
 
 	"service-manage/model"
@@ -25,10 +24,7 @@ func (h *EgressMethodHandler) List(c *gin.Context) {
 	isDirectStr := c.Query("isDirect")
 	statusStr := c.Query("status")
 
-	query := h.DB.Model(&model.EgressMethod{}).
-		Preload("DockerService", func(db *gorm.DB) *gorm.DB {
-			return db.Unscoped()
-		})
+	query := h.DB.Model(&model.EgressMethod{})
 
 	if serviceIDStr != "" {
 		serviceID, _ := strconv.Atoi(serviceIDStr)
@@ -66,6 +62,7 @@ func (h *EgressMethodHandler) List(c *gin.Context) {
 		serviceName := ""
 		machineName := ""
 		egressServiceName := ""
+
 		if m.ServiceType == "other" {
 			var otherService model.OtherService
 			if err := h.DB.Unscoped().First(&otherService, m.ServiceID).Error; err == nil {
@@ -76,14 +73,16 @@ func (h *EgressMethodHandler) List(c *gin.Context) {
 				}
 			}
 		} else {
-			if m.DockerService.ID != 0 {
-				serviceName = m.DockerService.Name
+			var dockerService model.DockerService
+			if err := h.DB.Unscoped().First(&dockerService, m.ServiceID).Error; err == nil {
+				serviceName = dockerService.Name
 				var machine model.Machine
-				if err := h.DB.Unscoped().First(&machine, m.DockerService.MachineID).Error; err == nil {
+				if err := h.DB.Unscoped().First(&machine, dockerService.MachineID).Error; err == nil {
 					machineName = machine.Name
 				}
 			}
 		}
+
 		if m.IsDirect {
 			egressServiceName = "本机直连"
 		} else if m.EgressServiceID > 0 {
@@ -96,6 +95,7 @@ func (h *EgressMethodHandler) List(c *gin.Context) {
 				}
 			}
 		}
+
 		result = append(result, EgressMethodVO{
 			EgressMethod:      m,
 			ServiceName:       serviceName,
@@ -153,8 +153,7 @@ func (h *EgressMethodHandler) Create(c *gin.Context) {
 	}
 
 	if err := h.DB.Create(&method).Error; err != nil {
-		fmt.Printf("创建出站方式失败: %v, method: %+v\n", err, method)
-		jsonError(c, "创建出站方式失败: "+err.Error())
+		jsonError(c, "创建出站方式失败")
 		return
 	}
 	jsonSuccess(c, gin.H{"id": method.ID})

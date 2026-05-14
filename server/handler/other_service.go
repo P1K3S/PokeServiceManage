@@ -24,10 +24,7 @@ func (h *OtherServiceHandler) List(c *gin.Context) {
 	machineIDStr := c.Query("machineId")
 	statusStr := c.Query("status")
 
-	query := h.DB.Model(&model.OtherService{}).
-		Preload("Machine", func(db *gorm.DB) *gorm.DB {
-			return db.Unscoped()
-		})
+	query := h.DB.Model(&model.OtherService{})
 
 	if keyword != "" {
 		query = query.Where("other_services.name LIKE ?", "%"+keyword+"%")
@@ -59,11 +56,12 @@ func (h *OtherServiceHandler) List(c *gin.Context) {
 
 	var result []OtherServiceVO
 	for _, s := range services {
+		var machine model.Machine
 		machineName := ""
 		machineIP := ""
-		if s.Machine.ID != 0 {
-			machineName = s.Machine.Name
-			machineIP = s.Machine.IP
+		if err := h.DB.Unscoped().First(&machine, s.MachineID).Error; err == nil {
+			machineName = machine.Name
+			machineIP = machine.IP
 		}
 		result = append(result, OtherServiceVO{
 			OtherService: s,
@@ -125,9 +123,20 @@ func (h *OtherServiceHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	if err := h.DB.Delete(&service).Error; err != nil {
+	tx := h.DB.Begin()
+
+	if err := tx.Where("service_id = ? AND service_type = ?", id, "other").Delete(&model.EgressMethod{}).Error; err != nil {
+		tx.Rollback()
+		jsonError(c, "删除关联出站方式失败")
+		return
+	}
+
+	if err := tx.Delete(&service).Error; err != nil {
+		tx.Rollback()
 		jsonError(c, "删除其他服务失败")
 		return
 	}
+
+	tx.Commit()
 	jsonSuccess(c, nil)
 }

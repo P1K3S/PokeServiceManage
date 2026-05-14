@@ -227,9 +227,15 @@ func (h *MachineHandler) Delete(c *gin.Context) {
 	var dockerIDs, otherIDs []uint
 	tx.Model(&model.DockerService{}).Unscoped().Where("machine_id = ?", id).Pluck("id", &dockerIDs)
 	tx.Model(&model.OtherService{}).Unscoped().Where("machine_id = ?", id).Pluck("id", &otherIDs)
-	serviceIDs := append(dockerIDs, otherIDs...)
-	if len(serviceIDs) > 0 {
-		if err := tx.Where("service_id IN ?", serviceIDs).Delete(&model.EgressMethod{}).Error; err != nil {
+	if len(dockerIDs) > 0 {
+		if err := tx.Where("service_id IN ? AND service_type = ?", dockerIDs, "docker").Delete(&model.EgressMethod{}).Error; err != nil {
+			tx.Rollback()
+			jsonError(c, "删除关联出站方式失败")
+			return
+		}
+	}
+	if len(otherIDs) > 0 {
+		if err := tx.Where("service_id IN ? AND service_type = ?", otherIDs, "other").Delete(&model.EgressMethod{}).Error; err != nil {
 			tx.Rollback()
 			jsonError(c, "删除关联出站方式失败")
 			return

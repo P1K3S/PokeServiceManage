@@ -175,7 +175,6 @@ const form = reactive({
 const rules = {
   serviceId: [{ required: true, message: '请选择所属服务', trigger: 'change' }],
   isDirect: [{ required: true, message: '请选择出站服务类型', trigger: 'change' }],
-  egressServiceId: [{ required: true, message: '请选择出站服务', trigger: 'change' }],
   publicIp: [{ required: true, message: '请输入公网IP', trigger: 'blur' }],
   publicPort: [{ required: true, message: '请输入公网端口', trigger: 'blur' }],
   internalIp: [{ required: true, message: '请输入内网IP', trigger: 'blur' }],
