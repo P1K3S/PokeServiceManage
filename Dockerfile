@@ -16,8 +16,8 @@ COPY web/ ./
 # Vite 构建，确保输出到 dist 目录
 RUN npm run build
 
-# 第二阶段：构建后端 (Go 1.21+)
-FROM golang:1.21-alpine3.18 AS backend
+# 第二阶段：构建后端 (Go 1.23+)
+FROM golang:1.23-alpine3.20 AS backend
 
 # 设置 Go 代理
 ENV GOPROXY=https://goproxy.cn,direct
