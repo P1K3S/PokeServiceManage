@@ -40,7 +40,7 @@
         <el-table-column prop="proxyName" label="代理名称" min-width="220" align="center" show-overflow-tooltip />
         <el-table-column label="所属服务" min-width="200" align="center" show-overflow-tooltip>
           <template #default="{ row }">
-            {{ row.serviceName ? row.serviceName + '-' + row.machineName : '-' }}
+            {{ row.serviceName || '-' }}
           </template>
         </el-table-column>
         <el-table-column label="出站服务" width="140" align="center">
@@ -107,13 +107,13 @@
           </el-select>
         </el-form-item>
         <el-form-item label="代理/隧道名称">
-          <el-input v-model="form.proxyName" placeholder="例如：nginx-frp-tunnel" />
+          <el-input v-model="form.proxyName" readonly />
         </el-form-item>
         <el-form-item label="公网IP" prop="publicIp">
           <el-input v-model="form.publicIp" placeholder="对外公网IP" />
         </el-form-item>
         <el-form-item label="公网端口" prop="publicPort">
-          <el-input-number v-model="form.publicPort" :min="0" :max="65535" style="width: 100%" />
+          <el-input-number v-model="form.publicPort" :min="0" :max="65535" style="width: 100%" @change="autoGenerateProxyName" />
         </el-form-item>
         <el-form-item label="内网IP" prop="internalIp">
           <el-input v-model="form.internalIp" placeholder="内网IP地址" />
@@ -144,7 +144,7 @@
       <template v-if="detailData">
         <el-descriptions :column="1" border>
           <el-descriptions-item label="代理名称">{{ detailData.proxyName || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="所属服务">{{ detailData.serviceName ? detailData.serviceName + '-' + detailData.machineName : '-' }}</el-descriptions-item>
+          <el-descriptions-item label="所属服务">{{ detailData.serviceName || '-' }}</el-descriptions-item>
           <el-descriptions-item label="出站服务">
             <template v-if="detailData.isDirect">本机直连</template>
             <template v-else-if="detailData.egressServiceName">
@@ -289,15 +289,34 @@ const getServiceInfo = (serviceIdStr) => {
 
 const onServiceChange = () => {
   autoFillAddresses()
+  autoGenerateProxyName()
 }
 
 const onEgressTypeChange = () => {
   form.egressServiceId = ''
   autoFillAddresses()
+  autoGenerateProxyName()
 }
 
 const onEgressServiceChange = () => {
   autoFillAddresses()
+  autoGenerateProxyName()
+}
+
+const autoGenerateProxyName = () => {
+  const svc = getServiceInfo(form.serviceId)
+  if (!svc) {
+    form.proxyName = ''
+    return
+  }
+  const machine = machineOptions.value.find(m => m.id === svc.machineId)
+  const machineName = machine ? machine.name : ''
+  const port = form.publicPort || 0
+  if (machineName && port) {
+    form.proxyName = `${machineName}.${port}`
+  } else {
+    form.proxyName = ''
+  }
 }
 
 const autoFillAddresses = () => {
@@ -324,6 +343,7 @@ const autoFillAddresses = () => {
       }
     }
   }
+  autoGenerateProxyName()
 }
 
 const openForm = (mode, row) => {
