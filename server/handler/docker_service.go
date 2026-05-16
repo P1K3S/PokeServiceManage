@@ -117,10 +117,35 @@ func (h *DockerServiceHandler) Update(c *gin.Context) {
 	}
 
 	updates = convertKeys(updates)
+
+	oldSourceIP := service.DockerSourceIP
+	oldPort := service.Port
+	oldMachineID := service.MachineID
+
 	if err := h.DB.Model(&service).Updates(updates).Error; err != nil {
 		jsonError(c, "更新服务失败")
 		return
 	}
+
+	newSourceIP, _ := updates["docker_source_ip"].(string)
+	if newSourceIP != "" && newSourceIP != oldSourceIP {
+		syncEgressInternalIP(h.DB, uint(id), "docker", oldSourceIP, newSourceIP)
+	}
+
+	if newPort, ok := updates["port"]; ok {
+		portVal := toInt(newPort)
+		if portVal > 0 && portVal != oldPort {
+			syncEgressPort(h.DB, uint(id), "docker", oldPort, portVal)
+		}
+	}
+
+	if newMachineID, ok := updates["machine_id"]; ok {
+		mid := toInt(newMachineID)
+		if mid > 0 && uint(mid) != oldMachineID {
+			syncEgressMachineChange(h.DB, uint(id), "docker", uint(mid))
+		}
+	}
+
 	jsonSuccess(c, nil)
 }
 

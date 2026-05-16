@@ -29,6 +29,7 @@ func (h *EgressMethodHandler) List(c *gin.Context) {
 	serviceIDStr := c.Query("serviceId")
 	machineIDStr := c.Query("machineId")
 	isDirectStr := c.Query("isDirect")
+	egressServiceIDStr := c.Query("egressServiceId")
 	statusStr := c.Query("status")
 
 	query := userScope(c, h.DB).Model(&model.EgressMethod{})
@@ -58,6 +59,10 @@ func (h *EgressMethodHandler) List(c *gin.Context) {
 		query = query.Where("is_direct = ?", true)
 	} else if isDirectStr == "false" {
 		query = query.Where("is_direct = ?", false)
+	}
+	if egressServiceIDStr != "" {
+		egressServiceID, _ := strconv.Atoi(egressServiceIDStr)
+		query = query.Where("egress_service_id = ?", egressServiceID)
 	}
 	if statusStr != "" {
 		status, _ := strconv.Atoi(statusStr)
@@ -161,6 +166,9 @@ func (h *EgressMethodHandler) Create(c *gin.Context) {
 			return
 		}
 		serviceMachineID = dockerService.MachineID
+		if dockerService.DockerSourceIP != "" && method.InternalIP == "" {
+			method.InternalIP = dockerService.DockerSourceIP
+		}
 	}
 
 	if method.IsDirect {

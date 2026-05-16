@@ -20,9 +20,9 @@
           </el-select>
         </el-form-item>
         <el-form-item label="出站服务">
-          <el-select v-model="search.egressType" placeholder="全部" clearable @change="fetchData" style="width: 160px">
+          <el-select v-model="search.egressFilter" placeholder="全部" clearable @change="fetchData" style="width: 160px">
             <el-option label="本机直连" value="direct" />
-            <el-option label="出站服务" value="egress" />
+            <el-option v-for="s in egressServiceOptions" :key="s.id" :label="s.name + '-' + s.machineName" :value="'egress-' + s.id" />
           </el-select>
         </el-form-item>
         <el-form-item label="状态">
@@ -87,11 +87,8 @@
       <el-form ref="formRef" :model="form" :rules="rules" label-width="110px">
         <el-form-item label="所属服务" prop="serviceId">
           <el-select v-model="form.serviceId" placeholder="请选择" style="width: 100%" filterable :teleported="false" @change="onServiceChange">
-            <el-option-group label="Docker服务">
-              <el-option v-for="s in dockerServiceOptions" :key="'docker-' + s.id" :label="s.name + '-' + s.machineName" :value="'docker-' + s.id" />
-            </el-option-group>
-            <el-option-group label="其他服务">
-              <el-option v-for="s in otherServiceOptions" :key="'other-' + s.id" :label="s.name + '-' + s.machineName" :value="'other-' + s.id" />
+            <el-option-group v-for="group in serviceOptionsByMachine" :key="group.label" :label="group.label">
+              <el-option v-for="s in group.services" :key="s.optionValue" :label="s.optionLabel" :value="s.optionValue" />
             </el-option-group>
           </el-select>
         </el-form-item>
@@ -196,7 +193,7 @@
 </template>
 
 <script setup>
-import { reactive, ref, onMounted } from 'vue'
+import { reactive, ref, computed, onMounted } from 'vue'
 import { getEgressMethods, createEgressMethod, updateEgressMethod, deleteEgressMethod, syncFirewall } from '../api/egress'
 import { getServices } from '../api/service'
 import { getOtherServices } from '../api/otherService'
@@ -213,7 +210,7 @@ const dockerServiceOptions = ref([])
 const otherServiceOptions = ref([])
 const egressServiceOptions = ref([])
 const machineOptions = ref([])
-const search = reactive({ machineId: '', egressType: '', status: '' })
+const search = reactive({ machineId: '', egressFilter: '', status: '' })
 const formVisible = ref(false)
 const formMode = ref('create')
 const formRef = ref(null)
@@ -247,8 +244,8 @@ const fetchData = async () => {
   try {
     const params = { page: page.value, pageSize: pageSize.value }
     if (search.machineId) params.machineId = search.machineId
-    if (search.egressType === 'direct') params.isDirect = true
-    else if (search.egressType === 'egress') params.isDirect = false
+    if (search.egressFilter === 'direct') params.isDirect = true
+    else if (search.egressFilter.startsWith('egress-')) params.egressServiceId = search.egressFilter.replace('egress-', '')
     if (search.status !== '') params.status = search.status
     const res = await getEgressMethods(params)
     list.value = res.data.list
@@ -272,6 +269,31 @@ const fetchServices = async () => {
     machineOptions.value = machinesRes.data.list
   } catch {}
 }
+
+const serviceOptionsByMachine = computed(() => {
+  const machineMap = new Map()
+  const addServices = (services, type) => {
+    services.forEach(s => {
+      const machineName = s.machineName || '未知主机'
+      if (!machineMap.has(machineName)) {
+        machineMap.set(machineName, [])
+      }
+      machineMap.get(machineName).push({
+        ...s,
+        serviceType: type,
+        optionValue: type + '-' + s.id,
+        optionLabel: s.name
+      })
+    })
+  }
+  addServices(dockerServiceOptions.value, 'docker')
+  addServices(otherServiceOptions.value, 'other')
+  const sortedMachines = [...machineMap.keys()].sort()
+  return sortedMachines.map(machineName => ({
+    label: machineName,
+    services: machineMap.get(machineName)
+  }))
+})
 
 const getServiceInfo = (serviceIdStr) => {
   if (!serviceIdStr) return null
@@ -325,11 +347,12 @@ const autoFillAddresses = () => {
 
   const serviceMachineIp = svc.machineIp || ''
   const servicePort = svc.port || 0
+  const internalIp = (svc.serviceType === 'docker' && svc.dockerSourceIp) ? svc.dockerSourceIp : serviceMachineIp
 
   if (form.isDirect) {
     form.publicIp = serviceMachineIp
     form.publicPort = servicePort
-    form.internalIp = serviceMachineIp
+    form.internalIp = internalIp
     form.internalPort = servicePort
   } else {
     const egressId = Number(form.egressServiceId)
@@ -338,7 +361,7 @@ const autoFillAddresses = () => {
       if (egressSvc) {
         form.publicIp = egressSvc.machineIp || ''
         form.publicPort = egressSvc.port || 0
-        form.internalIp = serviceMachineIp
+        form.internalIp = internalIp
         form.internalPort = servicePort
       }
     }

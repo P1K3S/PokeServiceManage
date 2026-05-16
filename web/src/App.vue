@@ -31,7 +31,7 @@
         </el-menu-item>
         <el-menu-item index="/other-services">
           <el-icon><Grid /></el-icon>
-          <span>其他服务管理</span>
+          <span>其他服务记录</span>
         </el-menu-item>
         <el-menu-item index="/egress">
           <el-icon><Connection /></el-icon>

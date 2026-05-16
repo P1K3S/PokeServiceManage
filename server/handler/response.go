@@ -81,3 +81,16 @@ func jsonPage(c *gin.Context, list interface{}, total int64, page, pageSize int)
 		PageSize: pageSize,
 	})
 }
+
+func toInt(v interface{}) int {
+	switch val := v.(type) {
+	case float64:
+		return int(val)
+	case int:
+		return val
+	case int64:
+		return int(val)
+	default:
+		return 0
+	}
+}

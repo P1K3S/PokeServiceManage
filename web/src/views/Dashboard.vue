@@ -91,7 +91,7 @@ const stats = computed(() => [
   { label: '主机总数', value: overview.machineTotal, color: '#5B8DEF', icon: ServerIcon },
   { label: '服务总数', value: overview.serviceTotal, color: '#6DA3C7', icon: BoxIcon },
   { label: '在线主机', value: overview.machineOnline, color: '#5FAE7A', icon: CheckIcon },
-  { label: '运行中服务', value: overview.serviceRunning, color: '#E0A84C', icon: PlayIcon }
+  { label: '运行中Docker服务', value: overview.serviceRunning, color: '#E0A84C', icon: PlayIcon }
 ])
 
 onMounted(fetchOverview)

@@ -114,10 +114,29 @@ func (h *OtherServiceHandler) Update(c *gin.Context) {
 	}
 
 	updates = convertKeys(updates)
+
+	oldPort := service.Port
+	oldMachineID := service.MachineID
+
 	if err := h.DB.Model(&service).Updates(updates).Error; err != nil {
 		jsonError(c, "更新其他服务失败")
 		return
 	}
+
+	if newPort, ok := updates["port"]; ok {
+		portVal := toInt(newPort)
+		if portVal > 0 && portVal != oldPort {
+			syncEgressPort(h.DB, uint(id), "other", oldPort, portVal)
+		}
+	}
+
+	if newMachineID, ok := updates["machine_id"]; ok {
+		mid := toInt(newMachineID)
+		if mid > 0 && uint(mid) != oldMachineID {
+			syncEgressMachineChange(h.DB, uint(id), "other", uint(mid))
+		}
+	}
+
 	jsonSuccess(c, nil)
 }
 

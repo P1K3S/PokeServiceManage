@@ -36,7 +36,7 @@ const routes = [
     path: '/other-services',
     name: 'OtherServiceList',
     component: () => import('../views/OtherServiceList.vue'),
-    meta: { title: '其他服务管理' }
+    meta: { title: '其他服务记录' }
   },
   {
     path: '/egress',

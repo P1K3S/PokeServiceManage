@@ -77,3 +77,14 @@
 2026-05-15T11:00:44.137+0800	INFO	server/main.go:66	服务启动于 :8080
 2026-05-15T11:07:27.237+0800	INFO	server/main.go:62	数据库表初始化完成
 2026-05-15T11:07:27.237+0800	INFO	server/main.go:67	服务启动于 :8080
+2026-05-17T04:28:55.885+0800	INFO	server/main.go:62	数据库表初始化完成
+2026-05-17T04:28:55.888+0800	INFO	server/main.go:67	服务启动于 :8080
+2026-05-17T04:29:05.454+0800	INFO	server/main.go:62	数据库表初始化完成
+2026-05-17T04:29:05.455+0800	INFO	server/main.go:67	服务启动于 :8080
+2026-05-17T04:34:13.218+0800	INFO	server/main.go:62	数据库表初始化完成
+2026-05-17T04:34:13.220+0800	INFO	server/main.go:67	服务启动于 :8080
+2026-05-17T04:39:42.413+0800	INFO	server/main.go:62	数据库表初始化完成
+2026-05-17T04:39:42.414+0800	INFO	server/main.go:67	服务启动于 :8080
+2026-05-17T04:39:42.416+0800	FATAL	server/main.go:69	服务启动失败: listen tcp :8080: bind: Only one usage of each socket address (protocol/network address/port) is normally permitted.
+2026-05-17T04:39:58.253+0800	INFO	server/main.go:62	数据库表初始化完成
+2026-05-17T04:39:58.254+0800	INFO	server/main.go:67	服务启动于 :8080

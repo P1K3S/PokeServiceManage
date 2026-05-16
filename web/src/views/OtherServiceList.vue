@@ -17,12 +17,6 @@
             <el-option v-for="m in machineOptions" :key="m.id" :label="m.name" :value="m.id" />
           </el-select>
         </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="search.status" placeholder="全部" clearable @change="fetchData" style="width: 120px">
-            <el-option label="运行中" :value="1" />
-            <el-option label="已停止" :value="0" />
-          </el-select>
-        </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="fetchData">查询</el-button>
         </el-form-item>
@@ -34,13 +28,6 @@
         <el-table-column prop="machineIp" label="主机IP" width="150" align="center" />
         <el-table-column prop="port" label="端口" width="100" align="center" />
         <el-table-column prop="protocol" label="协议" width="70" align="center" />
-        <el-table-column label="状态" width="80" align="center">
-          <template #default="{ row }">
-            <el-tag :type="row.status === 1 ? 'primary' : 'info'" size="small">
-              {{ row.status === 1 ? '运行中' : '已停止' }}
-            </el-tag>
-          </template>
-        </el-table-column>
         <el-table-column prop="egressCount" label="出站" width="65" align="center" />
         <el-table-column prop="remark" label="备注" min-width="160" show-overflow-tooltip align="center" />
         <el-table-column label="操作" width="220" fixed="right" align="center">
@@ -82,9 +69,6 @@
             <el-option label="UDP" value="UDP" />
           </el-select>
         </el-form-item>
-        <el-form-item label="状态">
-          <el-switch v-model="form.status" :active-value="1" :inactive-value="0" active-text="运行中" inactive-text="已停止" />
-        </el-form-item>
         <el-form-item v-if="authStore.isAdmin" label="公共服务">
           <el-switch v-model="form.isPublic" active-text="是" inactive-text="否" />
         </el-form-item>
@@ -106,11 +90,6 @@
           <el-descriptions-item label="主机IP">{{ detailData.machineIp || '-' }}</el-descriptions-item>
           <el-descriptions-item label="端口">{{ detailData.port || '-' }}</el-descriptions-item>
           <el-descriptions-item label="协议">{{ detailData.protocol || 'TCP' }}</el-descriptions-item>
-          <el-descriptions-item label="状态">
-            <el-tag :type="detailData.status === 1 ? 'primary' : 'info'" size="small">
-              {{ detailData.status === 1 ? '运行中' : '已停止' }}
-            </el-tag>
-          </el-descriptions-item>
           <el-descriptions-item label="出站数量">{{ detailData.egressCount || 0 }}</el-descriptions-item>
           <el-descriptions-item label="备注">{{ detailData.remark || '-' }}</el-descriptions-item>
         </el-descriptions>
@@ -137,7 +116,7 @@ const page = ref(1)
 const pageSize = ref(20)
 const loading = ref(false)
 const machineOptions = ref([])
-const search = reactive({ keyword: '', machineId: '', status: '' })
+const search = reactive({ keyword: '', machineId: '' })
 const formVisible = ref(false)
 const formMode = ref('create')
 const formRef = ref(null)
@@ -148,7 +127,7 @@ const detailVisible = ref(false)
 const detailData = ref(null)
 
 const form = reactive({
-  machineId: null, name: '', port: 80, protocol: 'TCP', status: 1, isPublic: false, remark: ''
+  machineId: null, name: '', port: 80, protocol: 'TCP', isPublic: false, remark: ''
 })
 
 const rules = {
@@ -184,11 +163,11 @@ const openForm = (mode, row) => {
     Object.assign(form, {
       machineId: row.machineId, name: row.name,
       port: row.port, protocol: row.protocol || 'TCP',
-      status: row.status, isPublic: !!row.isPublic, remark: row.remark || ''
+      isPublic: !!row.isPublic, remark: row.remark || ''
     })
   } else {
     editId.value = null
-    Object.assign(form, { machineId: null, name: '', port: 80, protocol: 'TCP', status: 1, isPublic: false, remark: '' })
+    Object.assign(form, { machineId: null, name: '', port: 80, protocol: 'TCP', isPublic: false, remark: '' })
   }
 }
 
