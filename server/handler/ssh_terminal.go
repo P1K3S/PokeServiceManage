@@ -16,19 +16,23 @@ import (
 	"gorm.io/gorm"
 )
 
-var wsUpgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool {
-		if config.AppConfig.Websocket.CheckOrigin {
-			return true
-		}
-		origin := r.Header.Get("Origin")
-		for _, o := range config.AppConfig.Cors.AllowOrigins {
-			if o == "*" || o == origin {
+func newWsUpgrader() *websocket.Upgrader {
+	return &websocket.Upgrader{
+		CheckOrigin: func(r *http.Request) bool {
+			if config.AppConfig.Websocket.CheckOrigin {
 				return true
 			}
-		}
-		return false
-	},
+			origin := r.Header.Get("Origin")
+			for _, o := range config.AppConfig.Cors.AllowOrigins {
+				if o == "*" || o == origin {
+					return true
+				}
+			}
+			return len(config.AppConfig.Cors.AllowOrigins) == 0
+		},
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+	}
 }
 
 type SSHTerminalHandler struct {
@@ -52,7 +56,7 @@ func (h *SSHTerminalHandler) HandleTerminal(c *gin.Context) {
 		return
 	}
 
-	ws, err := wsUpgrader.Upgrade(c.Writer, c.Request, nil)
+	ws, err := newWsUpgrader().Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		return
 	}

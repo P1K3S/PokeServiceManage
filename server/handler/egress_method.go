@@ -832,32 +832,40 @@ func (h *EgressMethodHandler) HealthCheck(c *gin.Context) {
 		Latency     int64  `json:"latency"`
 	}
 
-	dockerIDs := make([]uint, 0)
-	otherIDs := make([]uint, 0)
+	dockerServiceIDs := make(map[uint]bool)
+	otherServiceIDs := make(map[uint]bool)
 	for _, m := range methods {
 		if m.ServiceID == 0 {
 			continue
 		}
 		if m.ServiceType == "other" {
-			otherIDs = append(otherIDs, m.ServiceID)
+			otherServiceIDs[m.ServiceID] = true
 		} else {
-			dockerIDs = append(dockerIDs, m.ServiceID)
+			dockerServiceIDs[m.ServiceID] = true
 		}
 	}
 
-	serviceNameMap := make(map[uint]string)
-	if len(dockerIDs) > 0 {
+	serviceNameMap := make(map[string]string)
+	if len(dockerServiceIDs) > 0 {
+		ids := make([]uint, 0, len(dockerServiceIDs))
+		for id := range dockerServiceIDs {
+			ids = append(ids, id)
+		}
 		var list []model.DockerService
-		h.DB.Where("id IN ?", dockerIDs).Find(&list)
+		h.DB.Unscoped().Where("id IN ?", ids).Find(&list)
 		for _, ds := range list {
-			serviceNameMap[ds.ID] = ds.Name
+			serviceNameMap[fmt.Sprintf("docker-%d", ds.ID)] = ds.Name
 		}
 	}
-	if len(otherIDs) > 0 {
+	if len(otherServiceIDs) > 0 {
+		ids := make([]uint, 0, len(otherServiceIDs))
+		for id := range otherServiceIDs {
+			ids = append(ids, id)
+		}
 		var list []model.OtherService
-		h.DB.Where("id IN ?", otherIDs).Find(&list)
+		h.DB.Unscoped().Where("id IN ?", ids).Find(&list)
 		for _, os := range list {
-			serviceNameMap[os.ID] = os.Name
+			serviceNameMap[fmt.Sprintf("other-%d", os.ID)] = os.Name
 		}
 	}
 
@@ -876,7 +884,7 @@ func (h *EgressMethodHandler) HealthCheck(c *gin.Context) {
 			results[idx] = CheckResult{
 				ID:          method.ID,
 				ProxyName:   method.ProxyName,
-				ServiceName: serviceNameMap[method.ServiceID],
+				ServiceName: serviceNameMap[fmt.Sprintf("%s-%d", method.ServiceType, method.ServiceID)],
 			}
 
 			var addr string
