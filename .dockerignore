@@ -1,4 +1,41 @@
-node_modules
-dist
+# Git
 .git
+.gitignore
+.github
+
+# Documentation
+README.md
+docs/
+*.md
+
+# Logs
+logs/
 *.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node modules (前端依赖已经在容器内安装)
+web/node_modules/
+web/.vite
+web/dist
+
+# Go modules (后端依赖已经在容器内下载)
+server/vendor/
+server/*.test
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Temporary files
+tmp/
+temp/
+*.tmp
