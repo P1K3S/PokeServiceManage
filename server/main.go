@@ -50,6 +50,7 @@ func main() {
 		&model.DockerService{},
 		&model.OtherService{},
 		&model.EgressMethod{},
+		&model.Notice{},
 	); err != nil {
 		logger.Log.Sugar().Fatalf("自动建表失败: %v", err)
 	}

@@ -118,7 +118,7 @@ func (h *MachineHandler) Create(c *gin.Context) {
 	}
 
 	if machine.SSHEnabled && machine.SSHUser != "" && machine.SSHPassword != "" {
-		go h.discoverDockerServices(machine.ID)
+		go h.discoverDockerServices(machine.ID, getUserId(c))
 	}
 
 	jsonSuccess(c, gin.H{"id": machine.ID})
@@ -468,7 +468,7 @@ func parseDockerPorts(ports string) (hostPort, containerPort int, protocol strin
 	return
 }
 
-func (h *MachineHandler) discoverDockerServices(machineID uint) (int, error) {
+func (h *MachineHandler) discoverDockerServices(machineID uint, userID uint) (int, error) {
 	var machine model.Machine
 	if err := h.DB.First(&machine, machineID).Error; err != nil {
 		return 0, err
@@ -547,6 +547,7 @@ func (h *MachineHandler) discoverDockerServices(machineID uint) (int, error) {
 		} else {
 			service := model.DockerService{
 				MachineID:        machineID,
+				UserID:           userID,
 				Name:             container.Names,
 				Port:             hostPort,
 				Protocol:         protocol,
@@ -566,7 +567,7 @@ func (h *MachineHandler) discoverDockerServices(machineID uint) (int, error) {
 
 func (h *MachineHandler) DiscoverServices(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
-	count, err := h.discoverDockerServices(uint(id))
+	count, err := h.discoverDockerServices(uint(id), getUserId(c))
 	if err != nil {
 		msg := err.Error()
 		if strings.Contains(msg, "SSH not enabled") {

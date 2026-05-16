@@ -69,6 +69,13 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 			egress.POST("/sync-firewall", egressHandler.SyncFirewall)
 			egress.POST("/generate-frpc", egressHandler.GenerateFrpc)
 		}
+
+		noticeHandler := handler.NewNoticeHandler(db)
+		notices := api.Group("/notices")
+		{
+			notices.GET("", noticeHandler.GetNotice)
+			notices.PUT("", noticeHandler.UpdateNotice)
+		}
 	}
 
 	distPath := "dist"
