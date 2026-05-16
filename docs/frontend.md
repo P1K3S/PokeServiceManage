@@ -8,7 +8,9 @@
 | 构建工具 | Vite | 快速开发/构建 |
 | UI组件库 | Element Plus | 企业级后台组件 |
 | 路由 | Vue Router 4 | 支持嵌套路由 |
+| 状态管理 | Pinia | 轻量级状态管理 |
 | HTTP | Axios | 请求/响应拦截器 |
+| 终端 | xterm.js | SSH终端模拟器 |
 | 语言 | JavaScript | 开发友好 |
 
 ---
@@ -28,15 +30,22 @@ web/
 │   │   ├── machine.js           # 主机相关 API + 仪表盘 API
 │   │   ├── service.js           # Docker服务相关 API
 │   │   ├── otherService.js      # 其他服务相关 API
-│   │   └── egress.js            # 出站方式相关 API
+│   │   ├── egress.js            # 出站方式相关 API
+│   │   ├── notice.js            # 公告相关 API
+│   │   └── config.js            # 配置相关 API（frpc等）
+│   ├── stores/                  # Pinia 状态管理
+│   │   └── auth.js              # 认证状态（token, role, isAdmin）
 │   ├── router/
 │   │   └── index.js             # 路由配置
 │   └── views/
 │       ├── Dashboard.vue        # 仪表盘
 │       ├── MachineList.vue      # 主机管理
 │       ├── ServiceList.vue      # Docker服务管理
-│       ├── OtherServiceList.vue # 其他服务管理
-│       └── EgressList.vue       # 出站方式管理
+│       ├── OtherServiceList.vue # 其他服务记录
+│       ├── EgressList.vue       # 出站方式管理
+│       ├── FrpcConfig.vue       # 内网穿透配置
+│       ├── SSHTerminal.vue      # SSH终端
+│       └── OperationLogList.vue # 操作日志
 ```
 
 ---
@@ -71,15 +80,74 @@ const routes = [
     path: '/other-services',
     name: 'OtherServiceList',
     component: () => import('@/views/OtherServiceList.vue'),
-    meta: { title: '其他服务管理' }
+    meta: { title: '其他服务记录' }
   },
   {
     path: '/egress',
     name: 'EgressList',
     component: () => import('@/views/EgressList.vue'),
     meta: { title: '出站方式管理' }
+  },
+  {
+    path: '/frpc-config',
+    name: 'FrpcConfig',
+    component: () => import('@/views/FrpcConfig.vue'),
+    meta: { title: '内网穿透配置' }
+  },
+  {
+    path: '/ssh-terminal',
+    name: 'SSHTerminal',
+    component: () => import('@/views/SSHTerminal.vue'),
+    meta: { title: 'SSH终端' }
+  },
+  {
+    path: '/operation-logs',
+    name: 'OperationLogList',
+    component: () => import('@/views/OperationLogList.vue'),
+    meta: { title: '操作日志' }
   }
 ]
+```
+
+### 侧边栏菜单顺序
+
+```
+仪表盘 → 主机管理 → Docker服务管理 → 其他服务记录 → 出站方式管理 → 内网穿透配置 → SSH终端 → 操作日志
+```
+
+---
+
+## Pinia 状态管理
+
+### auth.js
+
+```javascript
+// src/stores/auth.js
+import { defineStore } from 'pinia'
+
+export const useAuthStore = defineStore('auth', {
+  state: () => ({
+    token: localStorage.getItem('token') || '',
+    role: localStorage.getItem('role') || '',
+    isAdmin: localStorage.getItem('role') === 'admin'
+  }),
+  actions: {
+    setAuth({ token, role }) {
+      this.token = token
+      this.role = role
+      this.isAdmin = role === 'admin'
+      localStorage.setItem('token', token)
+      localStorage.setItem('role', role)
+    },
+    clearAuth() {
+      this.token = ''
+      this.role = ''
+      this.isAdmin = false
+      localStorage.removeItem('token')
+      localStorage.removeItem('role')
+    }
+  }
+})
 ```
 
 ---
@@ -133,6 +201,7 @@ export const createService = (data) => request.post('/docker-services', data)
 export const updateService = (id, data) => request.put(`/docker-services/${id}`, data)
 export const deleteService = (id) => request.delete(`/docker-services/${id}`)
 export const checkService = (id) => request.post(`/docker-services/${id}/check`)
+export const batchCheckServices = (ids) => request.post('/docker-services/batch-check', { ids })
 
 // src/api/otherService.js
 export const getOtherServices = (params) => request.get('/other-services', { params })
@@ -145,6 +214,21 @@ export const getEgressMethods = (params) => request.get('/egress-methods', { par
 export const createEgressMethod = (data) => request.post('/egress-methods', data)
 export const updateEgressMethod = (id, data) => request.put(`/egress-methods/${id}`, data)
 export const deleteEgressMethod = (id) => request.delete(`/egress-methods/${id}`)
+export const checkEgressHealth = (id) => request.post(`/egress-methods/${id}/health-check`)
+export const batchCheckEgressHealth = (ids) => request.post('/egress-methods/batch-health-check', { ids })
+export const syncEgressFirewall = (id) => request.post(`/egress-methods/${id}/sync-firewall`)
+export const batchSyncEgressFirewall = (ids) => request.post('/egress-methods/batch-sync-firewall', { ids })
+
+// src/api/notice.js
+export const getNotice = () => request.get('/notice')
+export const updateNotice = (data) => request.put('/notice', data)
+
+// src/api/config.js
+export const generateFrpcConfig = (data) => request.post('/config/frpc', data)
+export const getEgressServicesForConfig = (params) => request.get('/config/egress-services', { params })
+
+// src/api/log.js
+export const getOperationLogs = (params) => request.get('/operation-logs', { params })
 ```
 
 ---
@@ -157,9 +241,13 @@ export const deleteEgressMethod = (id) => request.delete(`/egress-methods/${id}`
 ┌─────────────────────────────────────────────┐
 │  📊 服务管理平台 · 仪表盘                    │
 ├──────────┬──────────┬──────────┬────────────┤
-│  主机总数  │ 服务总数  │ 在线主机  │ 运行中服务 │
+│  主机总数  │ 服务总数  │ 在线主机  │运行中Docker服务│
 │    12     │    45    │    10    │     38     │
 ├──────────┴──────────┴──────────┴────────────┤
+│  ── 公告通知（管理员可编辑）                    │
+│  │ 系统维护通知：本周六凌晨2点进行系统升级...    │
+│  │ [编辑]（仅管理员可见）                      │
+├─────────────────────────────────────────────┤
 │  ── 最近主机（类型标签：局域网绿色/云服务器蓝色）  │
 │  │ 主机名称  │ IP          │ 类型   │ 服务数 │
 │  │ Node-1    │ 192.168.1.101 │ 🟢局域网 │   8   │
@@ -168,14 +256,15 @@ export const deleteEgressMethod = (id) => request.delete(`/egress-methods/${id}`
 └─────────────────────────────────────────────┘
 ```
 
-- **统计卡片**：主机总数、服务总数（Docker+其他）、在线主机、运行中服务
+- **统计卡片**：主机总数、服务总数（Docker+其他）、在线主机、运行中Docker服务
+- **公告通知卡片**：展示系统公告内容，管理员可通过编辑按钮修改公告内容
 - **最近主机**：按ID倒序展示最近5台主机，显示服务数量
 
 ### 主机管理 MachineList.vue
 
 - **页面布局**：顶部搜索栏 + 批量操作按钮 + 可展开数据表格
 - **搜索条件**：主机名称（模糊搜索）、类型（LAN/CLOUD下拉）、状态
-- **批量操作**：连通检测（批量SSH测试）、Docker服务检测（批量发现）
+- **批量操作**：连通检测（批量SSH测试）、Docker服务发现（批量发现）
 - **表格列**：展开列、主机名称、IP地址、类型、CPU、内存、操作系统、状态、服务数、操作
 - **展开行**：展开后显示该主机下的所有服务（Docker服务和其他服务），包含服务名称、类型（Docker/其他）、端口、协议、状态
 - **操作按钮**：编辑、删除（带二次确认）
@@ -187,7 +276,7 @@ export const deleteEgressMethod = (id) => request.delete(`/egress-methods/${id}`
 - **表格列**：服务名称、所属主机、源IP、源端口、宿主机端口（可排序）、协议、状态、出站数、备注、操作
 - **默认排序**：按宿主机端口升序
 - **操作按钮**：查看详情、编辑、锁定/解锁开关、删除
-- **批量操作**：检测所有状态（批量检查Docker容器运行状态）
+- **批量操作**：连通检测（批量检查Docker容器运行状态，使用 `Promise.all` 并发执行）
 - **新增/编辑表单**：
   - 基础信息：所属主机、服务名称、源IP
   - 端口映射：支持动态添加/删除多个端口映射（宿主机端口→容器端口+协议）
@@ -196,23 +285,26 @@ export const deleteEgressMethod = (id) => request.delete(`/egress-methods/${id}`
   - 备注
 - **详情弹窗**：展示完整端口映射信息、出站服务标记等
 
-### 其他服务管理 OtherServiceList.vue
+### 其他服务记录 OtherServiceList.vue
 
-- **搜索条件**：服务名称、所属主机、状态
-- **表格列**：服务名称、所属主机、主机IP、端口、协议、状态、备注、操作
-- **功能**：简单的服务管理，不含Docker特有字段
+- **页面标题**：其他服务记录
+- **搜索条件**：服务名称、所属主机
+- **表格列**：服务名称、所属主机、主机IP、端口、协议、备注、操作
+- **功能**：简单的服务管理，不含Docker特有字段，无状态列
 
 ### 出站方式管理 EgressList.vue
 
 - **搜索条件**：所属服务（下拉选择，同时包含Docker服务和其他服务）、出站服务类型（本机直连/出站服务）、状态
-- **表格列**：代理名称、所属服务（格式：服务名-主机名）、出站服务、公网地址、内网地址、协议、状态、操作
+- **表格列**：隧道名称、所属服务（格式：服务名-主机名）、出站服务、公网地址、内网地址、协议、状态、操作
 - **默认排序**：按公网端口升序
-- **操作按钮**：复制地址（支持非HTTPS环境）、编辑、删除
+- **操作按钮**：复制地址（支持非HTTPS环境）、健康检测、防火墙同步、编辑、删除
+- **批量操作**：批量健康检测、批量防火墙同步
+- **健康检测弹窗**：展示检测结果，包含隧道名称、服务名、状态、延迟
 - **新增/编辑表单**：
   - 所属服务：分组下拉选择（Docker服务组 + 其他服务组）
   - 出站服务类型：单选按钮（本机直连 / 出站服务）
   - 选择出站服务：仅出站服务类型时显示，下拉选择标记为出站服务的Docker服务
-  - 代理/隧道名称
+  - 隧道名称
   - 公网IP、公网端口
   - 内网IP、内网端口
   - 协议（TCP/UDP/HTTP/HTTPS）
@@ -225,6 +317,32 @@ export const deleteEgressMethod = (id) => request.delete(`/egress-methods/${id}`
   - HTTP/HTTPS：`http(s)://ip:port`
   - TCP/UDP：`ip:port`
   - 支持 `navigator.clipboard` 和 `document.execCommand` 两种复制方式
+
+### 内网穿透配置 FrpcConfig.vue
+
+- **页面功能**：根据出站服务生成 frpc 配置文件
+- **出站服务选择器**：下拉选择出站方式，自动关联相关服务
+- **主机过滤**：按主机筛选出站服务
+- **服务复选框**：勾选需要包含在配置中的服务，支持全选/反选
+- **配置生成**：根据勾选的服务自动生成 frpc 配置文本
+- **复制到剪贴板**：一键复制生成的配置内容，支持 `navigator.clipboard` 和 `document.execCommand`
+
+### SSH终端 SSHTerminal.vue
+
+- **页面功能**：通过 WebSocket 连接到远程主机的 SSH 终端
+- **主机选择器**：顶部下拉选择目标主机，选择后自动建立连接
+- **终端模拟器**：基于 xterm.js 实现，支持完整的终端交互
+- **WebSocket 连接**：通过 `ws://` 协议连接后端 WebSocket 端点，实时双向通信
+- **连接状态指示**：显示当前连接状态（已连接/已断开/连接中）
+- **自动重连**：连接断开后支持手动重连
+
+### 操作日志 OperationLogList.vue
+
+- **页面功能**：展示系统操作日志记录
+- **搜索条件**：操作类型、操作人、时间范围
+- **分页日志表格**：支持分页浏览，默认每页20条
+- **操作标签**：不同操作类型使用不同颜色标签区分（如：新增-绿色、修改-蓝色、删除-红色）
+- **表格列**：操作时间、操作人、操作类型标签、操作内容、目标对象
 
 ---
 
@@ -291,7 +409,8 @@ export default defineConfig({
     proxy: {
       '/api': {
         target: 'http://localhost:8080',
-        changeOrigin: true
+        changeOrigin: true,
+        ws: true
       }
     }
   }
@@ -304,14 +423,21 @@ export default defineConfig({
 
 | 功能 | 状态 | 说明 |
 |------|------|------|
-| 仪表盘统计 | ✅ | 主机/服务总数、在线/运行中数量、最近主机列表 |
+| 仪表盘统计 | ✅ | 主机/服务总数、在线/运行中Docker服务数量、最近主机列表 |
+| 公告通知 | ✅ | 仪表盘展示公告卡片，管理员可编辑公告内容 |
 | 主机CRUD | ✅ | 完整增删改查，支持SSH字段，IP变更自动同步出站方式 |
 | SSH连通检测 | ✅ | 单个/批量测试SSH连接 |
 | Docker服务发现 | ✅ | 自动检测主机上的Docker容器 |
 | Docker服务CRUD | ✅ | 支持多端口映射编辑，出站服务标记 |
 | 服务锁定 | ✅ | 锁定状态开关，防止被自动覆盖 |
-| 服务状态检测 | ✅ | 单个/批量检查Docker运行状态 |
-| 其他服务管理 | ✅ | 非Docker服务的简单管理，显示主机IP |
-| 出站方式管理 | ✅ | 支持本机直连和出站服务，自动填充IP/端口 |
+| 服务状态检测 | ✅ | 单个/批量检查Docker运行状态（Promise.all并发） |
+| 其他服务记录 | ✅ | 非Docker服务的简单管理，显示主机IP，无状态列 |
+| 出站方式管理 | ✅ | 支持本机直连和出站服务，自动填充IP/端口，隧道名称 |
+| 出站健康检测 | ✅ | 单个/批量健康检测，弹窗展示隧道名称/服务名/状态/延迟 |
+| 防火墙同步 | ✅ | 单个/批量同步出站方式防火墙规则 |
 | 复制地址 | ✅ | 支持HTTP/HTTPS协议格式，兼容非HTTPS环境 |
+| 内网穿透配置 | ✅ | 出站服务选择器、主机过滤、配置生成、复制到剪贴板 |
+| SSH终端 | ✅ | xterm.js终端、WebSocket连接、主机选择器、自动重连 |
+| 操作日志 | ✅ | 分页日志表格、操作类型标签（颜色区分） |
+| Pinia状态管理 | ✅ | auth store管理token、role、isAdmin |
 | 弹窗抖动修复 | ✅ | 全局滚动条固定 |

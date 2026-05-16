@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 
+	"service-manage/config"
+	"service-manage/logger"
 	"service-manage/model"
 	sshutil "service-manage/utils/ssh"
 
@@ -99,10 +101,10 @@ func (h *MachineHandler) Create(c *gin.Context) {
 	machine.UserID = getUserId(c)
 
 	if machine.SSHPort == 0 {
-		machine.SSHPort = 22
+		machine.SSHPort = config.AppConfig.SSH.DefaultPort
 	}
 	if machine.SSHUser == "" {
-		machine.SSHUser = "root"
+		machine.SSHUser = config.AppConfig.SSH.DefaultUser
 	}
 
 	var count int64
@@ -119,9 +121,18 @@ func (h *MachineHandler) Create(c *gin.Context) {
 
 	if machine.SSHEnabled && machine.SSHUser != "" && machine.SSHPassword != "" {
 		go h.discoverDockerServices(machine.ID, getUserId(c))
+	} else {
+		logger.Log.Sugar().Infof("主机[%s] 跳过Docker服务发现: SSH未启用或未配置", machine.Name)
 	}
 
-	jsonSuccess(c, gin.H{"id": machine.ID})
+	uid, uname := getLogUserInfo(c)
+	logOperation(h.DB, uid, uname, "create", "machine", machine.ID, machine.Name)
+
+	if machine.SSHEnabled && machine.SSHUser != "" && machine.SSHPassword != "" {
+		jsonSuccess(c, gin.H{"id": machine.ID})
+	} else {
+		jsonSuccess(c, gin.H{"id": machine.ID, "warning": "SSH未启用或未配置，Docker服务未自动发现，请配置SSH后手动点击发现服务"})
+	}
 }
 
 func (h *MachineHandler) Update(c *gin.Context) {
@@ -155,6 +166,9 @@ func (h *MachineHandler) Update(c *gin.Context) {
 
 	oldIP := machine.IP
 	oldName := machine.Name
+	oldSSHEnabled := machine.SSHEnabled
+	oldSSHUser := machine.SSHUser
+	oldSSHPassword := machine.SSHPassword
 
 	if err := h.DB.Model(&machine).Updates(updates).Error; err != nil {
 		jsonError(c, "更新主机失败")
@@ -170,6 +184,26 @@ func (h *MachineHandler) Update(c *gin.Context) {
 	if newName != "" && newName != oldName {
 		syncMachineEgressProxyName(h.DB, uint(id), newName)
 	}
+
+	newSSHEnabled, _ := updates["sshEnabled"].(bool)
+	newSSHUser, _ := updates["sshUser"].(string)
+	newSSHPassword, _ := updates["sshPassword"].(string)
+	sshJustConfigured := false
+	if newSSHEnabled && !oldSSHEnabled {
+		sshJustConfigured = true
+	}
+	if newSSHEnabled && newSSHUser != "" && (oldSSHUser == "" || oldSSHPassword == "") && (newSSHPassword != "" || oldSSHPassword != "") {
+		sshJustConfigured = true
+	}
+	if sshJustConfigured {
+		h.DB.First(&machine, id)
+		if machine.SSHEnabled && machine.SSHUser != "" && machine.SSHPassword != "" {
+			go h.discoverDockerServices(uint(id), getUserId(c))
+		}
+	}
+
+	uid, uname := getLogUserInfo(c)
+	logOperation(h.DB, uid, uname, "update", "machine", uint(id), machine.Name)
 
 	jsonSuccess(c, nil)
 }
@@ -204,6 +238,11 @@ func (h *MachineHandler) Delete(c *gin.Context) {
 			jsonError(c, "删除关联出站方式失败")
 			return
 		}
+		if err := tx.Where("egress_service_id IN ? AND is_direct = ?", dockerIDs, false).Delete(&model.EgressMethod{}).Error; err != nil {
+			tx.Rollback()
+			jsonError(c, "删除引用该主机出站服务的出站方式失败")
+			return
+		}
 	}
 	if len(otherIDs) > 0 {
 		if err := tx.Where("service_id IN ? AND service_type = ?", otherIDs, "other").Delete(&model.EgressMethod{}).Error; err != nil {
@@ -220,6 +259,10 @@ func (h *MachineHandler) Delete(c *gin.Context) {
 	}
 
 	tx.Commit()
+
+	uid, uname := getLogUserInfo(c)
+	logOperation(h.DB, uid, uname, "delete", "machine", uint(id), machine.Name)
+
 	jsonSuccess(c, nil)
 }
 
@@ -238,33 +281,15 @@ func (h *MachineHandler) Overview(c *gin.Context) {
 	userScope(c, h.DB).Model(&model.OtherService{}).Where("status = 1").Count(&otherRunning)
 	serviceRunning = dockerRunning + otherRunning
 
-	var recentMachines []model.Machine
-	userScope(c, h.DB).Model(&model.Machine{}).Order("id DESC").Limit(5).Find(&recentMachines)
-
-	type MachineVO struct {
-		model.Machine
-		ServiceCount int64 `json:"serviceCount"`
-	}
-	var recentMachineVOs []MachineVO
-	for _, m := range recentMachines {
-		clearMachinePassword(&m)
-		var count int64
-		var dockerCount, otherCount int64
-		userScope(c, h.DB).Model(&model.DockerService{}).Where("machine_id = ?", m.ID).Count(&dockerCount)
-		userScope(c, h.DB).Model(&model.OtherService{}).Where("machine_id = ?", m.ID).Count(&otherCount)
-		count = dockerCount + otherCount
-		recentMachineVOs = append(recentMachineVOs, MachineVO{
-			Machine:      m,
-			ServiceCount: count,
-		})
-	}
+	var recentLogs []model.OperationLog
+	h.DB.Order("id DESC").Limit(10).Find(&recentLogs)
 
 	jsonSuccess(c, gin.H{
 		"machineTotal":   machineTotal,
 		"serviceTotal":   serviceTotal,
 		"machineOnline":  machineOnline,
 		"serviceRunning": serviceRunning,
-		"recentMachines": recentMachineVOs,
+		"recentLogs":     recentLogs,
 	})
 }
 
@@ -283,7 +308,7 @@ func (h *MachineHandler) CheckSSH(c *gin.Context) {
 
 	sshPort := machine.SSHPort
 	if sshPort == 0 {
-		sshPort = 22
+		sshPort = config.AppConfig.SSH.DefaultPort
 	}
 
 	err := sshutil.CheckConnection(&sshutil.Config{
@@ -450,7 +475,7 @@ func (h *MachineHandler) discoverDockerServices(machineID uint, userID uint) (in
 	}
 	sshPort := machine.SSHPort
 	if sshPort == 0 {
-		sshPort = 22
+		sshPort = config.AppConfig.SSH.DefaultPort
 	}
 	output, err := sshutil.RunCommand(&sshutil.Config{
 		Host:     machine.IP,
@@ -459,8 +484,16 @@ func (h *MachineHandler) discoverDockerServices(machineID uint, userID uint) (in
 		Password: machine.SSHPassword,
 	}, "docker ps -a --format '{{json .}}'")
 	if err != nil {
+		logger.Log.Sugar().Errorf("主机[%s] Docker服务发现失败: docker ps 执行失败: %v", machine.Name, err)
 		return 0, err
 	}
+
+	trimmedOutput := strings.TrimSpace(output)
+	if trimmedOutput == "" {
+		logger.Log.Sugar().Warnf("主机[%s] docker ps 返回空输出，可能未安装Docker或当前用户无权限", machine.Name)
+		return 0, nil
+	}
+	logger.Log.Sugar().Debugf("主机[%s] docker ps 输出(%d字节): %s", machine.Name, len(trimmedOutput), trimmedOutput[:min(len(trimmedOutput), 500)])
 
 	ipOutput, _ := sshutil.RunCommand(&sshutil.Config{
 		Host:     machine.IP,
@@ -479,12 +512,20 @@ func (h *MachineHandler) discoverDockerServices(machineID uint, userID uint) (in
 
 	lines := strings.Split(strings.TrimSpace(output), "\n")
 	count := 0
-	for _, line := range lines {
+	for i, line := range lines {
+		line = strings.TrimSpace(line)
+		line = strings.TrimPrefix(line, "'")
+		line = strings.TrimSuffix(line, "'")
 		if line == "" {
 			continue
 		}
 		var container dockerContainer
 		if err := json.Unmarshal([]byte(line), &container); err != nil {
+			logger.Log.Sugar().Warnf("主机[%s] Docker容器JSON解析失败(第%d行): %v, 原始行: %s", machine.Name, i+1, err, line)
+			continue
+		}
+		if container.Names == "" {
+			logger.Log.Sugar().Warnf("主机[%s] Docker容器名称为空(第%d行): %s", machine.Name, i+1, line)
 			continue
 		}
 
@@ -503,8 +544,12 @@ func (h *MachineHandler) discoverDockerServices(machineID uint, userID uint) (in
 		}
 		if result.RowsAffected > 0 {
 			if existing.Locked {
+				logger.Log.Sugar().Infof("主机[%s] 容器[%s]已锁定，跳过更新", machine.Name, container.Names)
+				count++
 				continue
 			}
+			oldSourceIP := existing.DockerSourceIP
+			oldPort := existing.Port
 			h.DB.Model(&existing).Updates(map[string]interface{}{
 				"status":             status,
 				"port":               hostPort,
@@ -513,6 +558,12 @@ func (h *MachineHandler) discoverDockerServices(machineID uint, userID uint) (in
 				"protocol":           protocol,
 				"port_mappings":      mappingsJSON,
 			})
+			if containerIP != "" && containerIP != oldSourceIP {
+				syncEgressInternalIP(h.DB, existing.ID, "docker", oldSourceIP, containerIP)
+			}
+			if hostPort > 0 && hostPort != oldPort {
+				syncEgressPort(h.DB, existing.ID, "docker", oldPort, hostPort)
+			}
 		} else {
 			service := model.DockerService{
 				MachineID:        machineID,
@@ -526,11 +577,13 @@ func (h *MachineHandler) discoverDockerServices(machineID uint, userID uint) (in
 				Status:           status,
 			}
 			if err := h.DB.Create(&service).Error; err != nil {
+				logger.Log.Sugar().Warnf("主机[%s] 创建Docker服务[%s]失败: %v", machine.Name, container.Names, err)
 				continue
 			}
 		}
 		count++
 	}
+	logger.Log.Sugar().Infof("主机[%s] Docker服务发现完成: 发现 %d 个容器", machine.Name, count)
 	return count, nil
 }
 

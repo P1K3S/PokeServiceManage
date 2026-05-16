@@ -1,6 +1,6 @@
 <template>
-  <div style="display: flex; gap: 16px">
-    <el-card shadow="hover" style="flex: 1">
+  <div>
+    <el-card shadow="hover">
       <template #header>
         <span>内网穿透配置生成器</span>
       </template>
@@ -57,42 +57,6 @@
         </template>
       </div>
     </el-card>
-
-    <el-card shadow="hover" style="width: 320px; flex-shrink: 0; align-self: flex-start">
-      <template #header>
-        <div style="display: flex; justify-content: space-between; align-items: center">
-          <span>通知公告</span>
-          <el-button v-if="isSuperAdmin" type="primary" link size="small" @click="openEditNotice">编辑</el-button>
-        </div>
-      </template>
-      <div v-loading="noticeLoading" style="min-height: 80px">
-        <el-empty v-if="!noticeLoading && !notice" description="暂无通知" :image-size="60" />
-        <div v-else-if="notice">
-          <h4 style="margin: 0 0 12px 0; color: #303133">{{ notice.title || '通知' }}</h4>
-          <div style="color: #606266; white-space: pre-wrap; word-break: break-all; line-height: 1.6; font-size: 14px">
-            {{ notice.content }}
-          </div>
-          <div style="margin-top: 12px; color: #909399; font-size: 12px">
-            更新于: {{ formatDate(notice.updatedAt) }}
-          </div>
-        </div>
-      </div>
-    </el-card>
-
-    <el-dialog v-model="editNoticeVisible" title="编辑通知" width="500px" :close-on-click-modal="false" :lock-scroll="false">
-      <el-form label-width="60px">
-        <el-form-item label="标题">
-          <el-input v-model="editNoticeForm.title" placeholder="请输入标题" />
-        </el-form-item>
-        <el-form-item label="内容">
-          <el-input v-model="editNoticeForm.content" type="textarea" :rows="8" placeholder="请输入通知内容" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="editNoticeVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSaveNotice" :loading="savingNotice">保存</el-button>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
@@ -102,9 +66,7 @@ import { getEgressMethods, generateFrpc } from '../api/egress'
 import { getServices } from '../api/service'
 import { getOtherServices } from '../api/otherService'
 import { getMachines } from '../api/machine'
-import { getNotice, updateNotice } from '../api/notice'
 import { ElMessage } from 'element-plus'
-import { useAuthStore } from '../stores/auth'
 
 const loading = ref(false)
 const generating = ref(false)
@@ -259,54 +221,7 @@ const fallbackCopy = (text) => {
   document.body.removeChild(textarea)
 }
 
-const authStore = useAuthStore()
-const isSuperAdmin = computed(() => authStore.role === 'super_admin')
-const noticeLoading = ref(false)
-const notice = ref(null)
-const editNoticeVisible = ref(false)
-const savingNotice = ref(false)
-const editNoticeForm = ref({ title: '', content: '' })
-
-const fetchNotice = async () => {
-  noticeLoading.value = true
-  try {
-    const res = await getNotice()
-    notice.value = res.data
-  } catch {
-  } finally {
-    noticeLoading.value = false
-  }
-}
-
-const openEditNotice = () => {
-  editNoticeForm.value = {
-    title: notice.value?.title || '',
-    content: notice.value?.content || ''
-  }
-  editNoticeVisible.value = true
-}
-
-const handleSaveNotice = async () => {
-  savingNotice.value = true
-  try {
-    const res = await updateNotice(editNoticeForm.value)
-    notice.value = res.data
-    ElMessage.success('保存成功')
-    editNoticeVisible.value = false
-  } catch {
-  } finally {
-    savingNotice.value = false
-  }
-}
-
-const formatDate = (dateStr) => {
-  if (!dateStr) return ''
-  const date = new Date(dateStr)
-  return date.toLocaleString('zh-CN')
-}
-
 onMounted(() => {
   fetchData()
-  fetchNotice()
 })
 </script>

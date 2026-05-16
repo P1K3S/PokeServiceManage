@@ -13,6 +13,21 @@ func getUserId(c *gin.Context) uint {
 	return id.(uint)
 }
 
+func getUsername(c *gin.Context) string {
+	username, _ := c.Get("username")
+	if username == nil {
+		return ""
+	}
+	return username.(string)
+}
+
+func getLogUserInfo(c *gin.Context) (uint, string) {
+	if uid := getUserId(c); uid > 0 {
+		return uid, getUsername(c)
+	}
+	return 0, "system"
+}
+
 func isAdmin(c *gin.Context) bool {
 	role, _ := c.Get("role")
 	return role == "super_admin"

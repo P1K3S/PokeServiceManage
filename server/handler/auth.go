@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 
+	"service-manage/config"
 	"service-manage/model"
 	"service-manage/utils"
 
@@ -68,7 +69,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	if req.AuthCode != "pokeservicemanage" {
+	if req.AuthCode != config.AppConfig.Auth.RegisterCode {
 		c.JSON(http.StatusBadRequest, gin.H{"code": 400, "message": "认证码错误"})
 		return
 	}

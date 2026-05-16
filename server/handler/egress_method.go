@@ -2,13 +2,17 @@ package handler
 
 import (
 	"fmt"
+	"net"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
+	"time"
 
 	"service-manage/config"
 	"service-manage/model"
+	frputil "service-manage/utils/frp"
 	sshutil "service-manage/utils/ssh"
 
 	"github.com/gin-gonic/gin"
@@ -86,27 +90,88 @@ func (h *EgressMethodHandler) List(c *gin.Context) {
 		EgressServiceName string `json:"egressServiceName"`
 	}
 
+	dockerServiceIDs := make(map[uint]bool)
+	otherServiceIDs := make(map[uint]bool)
+	egressServiceIDs := make(map[uint]bool)
+	for _, m := range methods {
+		if m.ServiceType == "docker" {
+			dockerServiceIDs[m.ServiceID] = true
+		} else {
+			otherServiceIDs[m.ServiceID] = true
+		}
+		if !m.IsDirect && m.EgressServiceID > 0 {
+			egressServiceIDs[m.EgressServiceID] = true
+		}
+	}
+
+	dockerServiceMap := make(map[uint]model.DockerService)
+	if len(dockerServiceIDs) > 0 || len(egressServiceIDs) > 0 {
+		allIDs := make([]uint, 0, len(dockerServiceIDs)+len(egressServiceIDs))
+		for id := range dockerServiceIDs {
+			allIDs = append(allIDs, id)
+		}
+		for id := range egressServiceIDs {
+			if !dockerServiceIDs[id] {
+				allIDs = append(allIDs, id)
+			}
+		}
+		var dockerServices []model.DockerService
+		h.DB.Unscoped().Where("id IN ?", allIDs).Find(&dockerServices)
+		for _, ds := range dockerServices {
+			dockerServiceMap[ds.ID] = ds
+		}
+	}
+
+	otherServiceMap := make(map[uint]model.OtherService)
+	if len(otherServiceIDs) > 0 {
+		ids := make([]uint, 0, len(otherServiceIDs))
+		for id := range otherServiceIDs {
+			ids = append(ids, id)
+		}
+		var otherServices []model.OtherService
+		h.DB.Unscoped().Where("id IN ?", ids).Find(&otherServices)
+		for _, os := range otherServices {
+			otherServiceMap[os.ID] = os
+		}
+	}
+
+	machineIDs := make(map[uint]bool)
+	for _, ds := range dockerServiceMap {
+		machineIDs[ds.MachineID] = true
+	}
+	for _, os := range otherServiceMap {
+		machineIDs[os.MachineID] = true
+	}
+	machineMap := make(map[uint]model.Machine)
+	if len(machineIDs) > 0 {
+		ids := make([]uint, 0, len(machineIDs))
+		for id := range machineIDs {
+			ids = append(ids, id)
+		}
+		var machines []model.Machine
+		h.DB.Unscoped().Where("id IN ?", ids).Find(&machines)
+		for _, m := range machines {
+			machineMap[m.ID] = m
+		}
+	}
+
 	var result []EgressMethodVO
 	for _, m := range methods {
 		serviceName := ""
 		machineName := ""
 		egressServiceName := ""
 
-		if m.ServiceType == "other" {
-			var otherService model.OtherService
-			if err := h.DB.Unscoped().First(&otherService, m.ServiceID).Error; err == nil {
-				serviceName = otherService.Name
-				var machine model.Machine
-				if err := h.DB.Unscoped().First(&machine, otherService.MachineID).Error; err == nil {
+		if m.ServiceType == "docker" {
+			if ds, ok := dockerServiceMap[m.ServiceID]; ok {
+				serviceName = ds.Name
+				if machine, ok := machineMap[ds.MachineID]; ok {
 					machineName = machine.Name
 				}
 			}
 		} else {
-			var dockerService model.DockerService
-			if err := h.DB.Unscoped().First(&dockerService, m.ServiceID).Error; err == nil {
-				serviceName = dockerService.Name
-				var machine model.Machine
-				if err := h.DB.Unscoped().First(&machine, dockerService.MachineID).Error; err == nil {
+			if os, ok := otherServiceMap[m.ServiceID]; ok {
+				serviceName = os.Name
+				if machine, ok := machineMap[os.MachineID]; ok {
 					machineName = machine.Name
 				}
 			}
@@ -115,12 +180,10 @@ func (h *EgressMethodHandler) List(c *gin.Context) {
 		if m.IsDirect {
 			egressServiceName = "本机直连"
 		} else if m.EgressServiceID > 0 {
-			var egressService model.DockerService
-			if err := h.DB.Unscoped().First(&egressService, m.EgressServiceID).Error; err == nil {
-				egressServiceName = egressService.Name
-				var egressMachine model.Machine
-				if err := h.DB.Unscoped().First(&egressMachine, egressService.MachineID).Error; err == nil {
-					egressServiceName = egressService.Name + "-" + egressMachine.Name
+			if es, ok := dockerServiceMap[m.EgressServiceID]; ok {
+				egressServiceName = es.Name
+				if machine, ok := machineMap[es.MachineID]; ok {
+					egressServiceName = es.Name + "-" + machine.Name
 				}
 			}
 		}
@@ -196,6 +259,10 @@ func (h *EgressMethodHandler) Create(c *gin.Context) {
 		jsonError(c, "创建出站方式失败")
 		return
 	}
+
+	uid, uname := getLogUserInfo(c)
+	logOperation(h.DB, uid, uname, "create", "egress_method", method.ID, method.ProxyName)
+
 	jsonSuccess(c, gin.H{"id": method.ID})
 }
 
@@ -249,6 +316,10 @@ func (h *EgressMethodHandler) Update(c *gin.Context) {
 		jsonError(c, "更新出站方式失败")
 		return
 	}
+
+	uid, uname := getLogUserInfo(c)
+	logOperation(h.DB, uid, uname, "update", "egress_method", uint(id), method.ProxyName)
+
 	jsonSuccess(c, nil)
 }
 
@@ -262,6 +333,45 @@ func (h *EgressMethodHandler) Delete(c *gin.Context) {
 
 	if err := h.DB.Delete(&method).Error; err != nil {
 		jsonError(c, "删除出站方式失败")
+		return
+	}
+
+	uid, uname := getLogUserInfo(c)
+	logOperation(h.DB, uid, uname, "delete", "egress_method", uint(id), method.ProxyName)
+
+	jsonSuccess(c, nil)
+}
+
+func (h *EgressMethodHandler) BatchUpdateStatus(c *gin.Context) {
+	var req struct {
+		IDs    []uint `json:"ids"`
+		Status int8   `json:"status"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil || len(req.IDs) == 0 {
+		jsonError(c, "请选择至少一个出站方式")
+		return
+	}
+	if req.Status != 0 && req.Status != 1 {
+		jsonError(c, "状态值无效")
+		return
+	}
+	if err := userScope(c, h.DB).Model(&model.EgressMethod{}).Where("id IN ?", req.IDs).Update("status", req.Status).Error; err != nil {
+		jsonError(c, "批量更新状态失败")
+		return
+	}
+	jsonSuccess(c, nil)
+}
+
+func (h *EgressMethodHandler) BatchDelete(c *gin.Context) {
+	var req struct {
+		IDs []uint `json:"ids"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil || len(req.IDs) == 0 {
+		jsonError(c, "请选择至少一个出站方式")
+		return
+	}
+	if err := userScope(c, h.DB).Where("id IN ?", req.IDs).Delete(&model.EgressMethod{}).Error; err != nil {
+		jsonError(c, "批量删除失败")
 		return
 	}
 	jsonSuccess(c, nil)
@@ -309,7 +419,7 @@ func parsePortsFromSpec(spec string) []int {
 }
 
 func isProtectedPort(port int) bool {
-	return port == 22 || (port >= 62500 && port <= 62501)
+	return config.AppConfig.PortRange.IsProtectedPort(port)
 }
 
 func (h *EgressMethodHandler) resolveMachineID(m model.EgressMethod) uint {
@@ -346,8 +456,8 @@ func (h *EgressMethodHandler) SyncFirewall(c *gin.Context) {
 
 	if !isAdmin(c) {
 		for _, m := range methods {
-			if m.PublicPort < 9701 || m.PublicPort > 9799 {
-				jsonError(c, "普通用户仅可使用 9701-9799 端口范围，当前存在超出范围的端口，无法同步")
+			if m.PublicPort < config.AppConfig.PortRange.UserPortMin || m.PublicPort > config.AppConfig.PortRange.UserPortMax {
+				jsonError(c, fmt.Sprintf("普通用户仅可使用 %s 端口范围，当前存在超出范围的端口，无法同步", config.AppConfig.PortRange.UserPortRangeDesc()))
 				return
 			}
 		}
@@ -435,7 +545,7 @@ func (h *EgressMethodHandler) SyncFirewall(c *gin.Context) {
 
 		sshPort := machine.SSHPort
 		if sshPort == 0 {
-			sshPort = 22
+			sshPort = config.AppConfig.SSH.DefaultPort
 		}
 		cfg := &sshutil.Config{
 			Host: machine.IP, Port: sshPort,
@@ -649,10 +759,22 @@ func (h *EgressMethodHandler) GenerateFrpc(c *gin.Context) {
 		return
 	}
 
+	frpCfg := frputil.GetServerConfig(&frputil.DiscoverParams{
+		MachineIP:     egressMachine.IP,
+		SSHPort:       egressMachine.SSHPort,
+		SSHUser:       egressMachine.SSHUser,
+		SSHPassword:   egressMachine.SSHPassword,
+		ContainerName: egressService.Name,
+	})
+	if frpCfg.ServerPort <= 0 || frpCfg.AuthToken == "" {
+		jsonError(c, "FRP 服务端配置获取失败，请检查出站服务所在主机的 SSH 连通性及容器配置文件挂载")
+		return
+	}
+
 	var lines []string
 	lines = append(lines, fmt.Sprintf(`serverAddr = "%s"`, egressMachine.IP))
-	lines = append(lines, fmt.Sprintf("serverPort = %d", config.AppConfig.Frp.ServerPort))
-	lines = append(lines, fmt.Sprintf(`auth.token = "%s"`, config.AppConfig.Frp.AuthToken))
+	lines = append(lines, fmt.Sprintf("serverPort = %d", frpCfg.ServerPort))
+	lines = append(lines, fmt.Sprintf(`auth.token = "%s"`, frpCfg.AuthToken))
 	lines = append(lines, "")
 
 	for _, m := range methods {
@@ -696,4 +818,87 @@ func (h *EgressMethodHandler) GenerateFrpc(c *gin.Context) {
 	jsonSuccess(c, gin.H{
 		"config": result,
 	})
+}
+
+func (h *EgressMethodHandler) HealthCheck(c *gin.Context) {
+	var methods []model.EgressMethod
+	userScope(c, h.DB).Where("status = ?", 1).Find(&methods)
+
+	type CheckResult struct {
+		ID          uint   `json:"id"`
+		ProxyName   string `json:"proxyName"`
+		ServiceName string `json:"serviceName"`
+		Reachable   bool   `json:"reachable"`
+		Latency     int64  `json:"latency"`
+	}
+
+	dockerIDs := make([]uint, 0)
+	otherIDs := make([]uint, 0)
+	for _, m := range methods {
+		if m.ServiceID == 0 {
+			continue
+		}
+		if m.ServiceType == "other" {
+			otherIDs = append(otherIDs, m.ServiceID)
+		} else {
+			dockerIDs = append(dockerIDs, m.ServiceID)
+		}
+	}
+
+	serviceNameMap := make(map[uint]string)
+	if len(dockerIDs) > 0 {
+		var list []model.DockerService
+		h.DB.Where("id IN ?", dockerIDs).Find(&list)
+		for _, ds := range list {
+			serviceNameMap[ds.ID] = ds.Name
+		}
+	}
+	if len(otherIDs) > 0 {
+		var list []model.OtherService
+		h.DB.Where("id IN ?", otherIDs).Find(&list)
+		for _, os := range list {
+			serviceNameMap[os.ID] = os.Name
+		}
+	}
+
+	timeout := time.Duration(config.AppConfig.HealthCheck.Timeout) * time.Second
+	if timeout <= 0 {
+		timeout = time.Second
+	}
+	usePublicIP := config.AppConfig.HealthCheck.UsePublicIP
+
+	results := make([]CheckResult, len(methods))
+	var wg sync.WaitGroup
+	for i, m := range methods {
+		wg.Add(1)
+		go func(idx int, method model.EgressMethod) {
+			defer wg.Done()
+			results[idx] = CheckResult{
+				ID:          method.ID,
+				ProxyName:   method.ProxyName,
+				ServiceName: serviceNameMap[method.ServiceID],
+			}
+
+			var addr string
+			if usePublicIP && method.PublicIP != "" && method.PublicPort > 0 {
+				addr = fmt.Sprintf("%s:%d", method.PublicIP, method.PublicPort)
+			} else if method.InternalIP != "" && method.InternalPort > 0 {
+				addr = fmt.Sprintf("%s:%d", method.InternalIP, method.InternalPort)
+			} else {
+				return
+			}
+
+			start := time.Now()
+			conn, err := net.DialTimeout("tcp", addr, timeout)
+			latency := time.Since(start).Milliseconds()
+			if err == nil {
+				conn.Close()
+				results[idx].Reachable = true
+				results[idx].Latency = latency
+			}
+		}(i, m)
+	}
+	wg.Wait()
+
+	jsonSuccess(c, results)
 }

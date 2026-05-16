@@ -40,6 +40,24 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 			machines.POST("/:id/discover-services", machineHandler.DiscoverServices)
 		}
 
+		sshHandler := handler.NewSSHTerminalHandler(db)
+		api.GET("/ssh-terminal/:id", sshHandler.HandleTerminal)
+
+		sftpHandler := handler.NewSFTPHandler(db)
+		sftp := api.Group("/sftp")
+		{
+			sftp.GET("/:id/list", sftpHandler.List)
+			sftp.GET("/:id/download", sftpHandler.Download)
+			sftp.GET("/:id/download-dir", sftpHandler.DownloadDir)
+			sftp.POST("/:id/upload", sftpHandler.Upload)
+			sftp.POST("/:id/mkdir", sftpHandler.Mkdir)
+			sftp.DELETE("/:id/remove", sftpHandler.Remove)
+			sftp.PUT("/:id/rename", sftpHandler.Rename)
+			sftp.GET("/:id/read", sftpHandler.ReadFile)
+			sftp.POST("/:id/write", sftpHandler.WriteFile)
+			sftp.GET("/:id/stat", sftpHandler.Stat)
+		}
+
 		dockerServiceHandler := handler.NewDockerServiceHandler(db)
 		dockerServices := api.Group("/docker-services")
 		{
@@ -68,6 +86,9 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 			egress.DELETE("/:id", egressHandler.Delete)
 			egress.POST("/sync-firewall", egressHandler.SyncFirewall)
 			egress.POST("/generate-frpc", egressHandler.GenerateFrpc)
+			egress.PUT("/batch-status", egressHandler.BatchUpdateStatus)
+			egress.DELETE("/batch", egressHandler.BatchDelete)
+			egress.GET("/health-check", egressHandler.HealthCheck)
 		}
 
 		noticeHandler := handler.NewNoticeHandler(db)
@@ -75,6 +96,19 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 		{
 			notices.GET("", noticeHandler.GetNotice)
 			notices.PUT("", noticeHandler.UpdateNotice)
+		}
+
+		logHandler := handler.NewOperationLogHandler(db)
+		logs := api.Group("/operation-logs")
+		{
+			logs.GET("", logHandler.List)
+		}
+
+		configHandler := handler.NewConfigHandler(db)
+		config := api.Group("/config")
+		{
+			config.GET("/export", configHandler.Export)
+			config.POST("/import", configHandler.Import)
 		}
 	}
 

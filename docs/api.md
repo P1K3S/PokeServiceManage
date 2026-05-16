@@ -236,6 +236,48 @@ POST /machines/:id/discover-services
 
 ---
 
+### 1.8 全量Docker服务发现
+
+```
+POST /machines/discover-all-services
+```
+
+对所有在线主机异步执行Docker服务发现。
+
+**响应示例：**
+
+```json
+{
+  "code": 0,
+  "message": "已触发全量服务发现",
+  "data": {
+    "triggeredCount": 10
+  }
+}
+```
+
+---
+
+### 1.9 SSH终端
+
+```
+GET /ssh-terminal/:id
+```
+
+通过 WebSocket 建立 SSH 终端连接。
+
+**Path 参数：**
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| id | int | 主机ID |
+
+**协议说明：**
+
+- 协议升级为 WebSocket 后，前端发送的按键数据通过 WebSocket 传递至后端，后端转发至 SSH 会话，SSH 输出同样通过 WebSocket 回传至前端渲染。
+
+---
+
 ## 二、Docker服务管理接口
 
 ### 2.1 获取Docker服务列表
@@ -365,7 +407,7 @@ DELETE /docker-services/:id
 
 ---
 
-### 2.5 检测服务状态
+### 2.5 连通检测
 
 ```
 POST /docker-services/:id/check
@@ -386,7 +428,7 @@ POST /docker-services/:id/check
 
 ---
 
-## 三、其他服务管理接口
+## 三、其他服务记录接口
 
 ### 3.1 获取其他服务列表
 
@@ -576,7 +618,7 @@ POST /egress-methods
 | serviceType | string | 是 | 服务类型：DOCKER / OTHER |
 | isDirect | bool | 是 | 是否本机直连 |
 | egressServiceId | int | 条件必填 | 出站服务ID（isDirect=false时必填，且该服务必须标记为出站服务） |
-| proxyName | string | 否 | 代理/隧道名称 |
+| proxyName | string | 否 | 隧道名称 |
 | publicIp | string | 是 | 公网IP |
 | publicPort | int | 是 | 公网端口 |
 | internalIp | string | 是 | 内网IP |
@@ -620,6 +662,161 @@ DELETE /egress-methods/:id
 
 ---
 
+### 4.5 批量更新出站方式状态
+
+```
+PUT /egress-methods/batch-status
+```
+
+**请求体：**
+
+```json
+{
+  "ids": [1, 2, 3],
+  "status": 0
+}
+```
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| ids | int[] | 是 | 出站方式ID列表 |
+| status | int | 是 | 目标状态：1-启用 0-停用 |
+
+---
+
+### 4.6 批量删除出站方式
+
+```
+DELETE /egress-methods/batch
+```
+
+**请求体：**
+
+```json
+{
+  "ids": [1, 2, 3]
+}
+```
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| ids | int[] | 是 | 出站方式ID列表 |
+
+---
+
+### 4.7 健康检查
+
+```
+GET /egress-methods/health-check
+```
+
+对所有出站方式并发执行 TCP 连通探测，返回每条出站方式的可达性与延迟。
+
+**响应示例：**
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": [
+    {
+      "id": 1,
+      "proxyName": "Poke-NAS.9243_MYSQL",
+      "serviceName": "mysql",
+      "reachable": true,
+      "latency": 12
+    },
+    {
+      "id": 2,
+      "proxyName": "Poke-NAS.8080_WEB",
+      "serviceName": "nginx",
+      "reachable": false,
+      "latency": 0
+    }
+  ]
+}
+```
+
+**响应字段说明：**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | int | 出站方式ID |
+| proxyName | string | 隧道名称 |
+| serviceName | string | 所属服务名称 |
+| reachable | bool | 是否可达 |
+| latency | int | 延迟（毫秒），不可达时为0 |
+
+---
+
+### 4.8 生成frpc配置
+
+```
+POST /egress-methods/generate-frpc
+```
+
+根据出站方式数据生成 frpc 客户端配置文件内容。
+
+**请求体：**
+
+```json
+{
+  "ids": [1, 2, 3]
+}
+```
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| ids | int[] | 是 | 出站方式ID列表 |
+
+**响应示例：**
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "content": "[common]\nserverAddr = 123.45.67.89\nserverPort = 7000\n\n[Poke-NAS.9243_MYSQL]\ntype = tcp\nlocalIp = 192.168.1.101\nlocalPort = 3306\nremotePort = 9243"
+  }
+}
+```
+
+---
+
+### 4.9 同步防火墙规则
+
+```
+POST /egress-methods/sync-firewall
+```
+
+根据出站方式的公网端口信息，同步目标主机的防火墙放行规则。
+
+**请求体：**
+
+```json
+{
+  "ids": [1, 2, 3]
+}
+```
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| ids | int[] | 是 | 出站方式ID列表 |
+
+**响应示例：**
+
+```json
+{
+  "code": 0,
+  "message": "防火墙规则同步完成",
+  "data": {
+    "syncedCount": 3
+  }
+}
+```
+
+---
+
 ## 五、仪表盘接口
 
 ### 5.1 获取概览数据
@@ -653,11 +850,157 @@ GET /overview
 }
 ```
 
-> **注意**：`serviceTotal` 和 `serviceRunning` 包含 Docker 服务和其他服务的总和。
+> **注意**：`serviceTotal` 包含 Docker 服务和其他服务的总和；`serviceRunning` 仅为运行中Docker服务的数量。
 
 ---
 
-## 六、枚举值定义
+## 六、操作日志接口
+
+### 6.1 获取操作日志列表
+
+```
+GET /operation-logs
+```
+
+**Query 参数：**
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| page | int | 否 | 页码，默认 1 |
+| pageSize | int | 否 | 每页条数，默认 10 |
+| keyword | string | 否 | 操作内容模糊搜索 |
+
+**响应示例：**
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "list": [
+      {
+        "id": 1,
+        "operator": "admin",
+        "action": "新增主机",
+        "target": "办公内网-Node2",
+        "detail": "IP: 192.168.1.102",
+        "createdAt": "2026-05-13T10:00:00+08:00"
+      }
+    ],
+    "total": 1,
+    "page": 1,
+    "pageSize": 10
+  }
+}
+```
+
+---
+
+## 七、配置导入导出接口
+
+### 7.1 导出配置
+
+```
+GET /config/export
+```
+
+导出系统全量配置（主机、服务、出站方式等）为 JSON 文件。
+
+**响应示例：**
+
+返回 `Content-Type: application/json`，`Content-Disposition: attachment; filename=config_export.json` 的文件流。
+
+---
+
+### 7.2 导入配置
+
+```
+POST /config/import
+```
+
+上传 JSON 配置文件进行全量导入，会覆盖现有数据。
+
+**请求格式：** `multipart/form-data`
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| file | file | 是 | JSON 配置文件 |
+
+**响应示例：**
+
+```json
+{
+  "code": 0,
+  "message": "配置导入成功",
+  "data": {
+    "machines": 5,
+    "dockerServices": 20,
+    "otherServices": 3,
+    "egressMethods": 15
+  }
+}
+```
+
+---
+
+## 八、公告接口
+
+### 8.1 获取公告
+
+```
+GET /notices
+```
+
+获取当前系统公告内容。
+
+**响应示例：**
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "content": "系统将于本周六凌晨2:00-6:00进行维护升级",
+    "updatedAt": "2026-05-13T10:00:00+08:00"
+  }
+}
+```
+
+---
+
+### 8.2 更新公告
+
+```
+PUT /notices
+```
+
+> **权限要求**：仅管理员可调用。
+
+**请求体：**
+
+```json
+{
+  "content": "系统将于本周六凌晨2:00-6:00进行维护升级"
+}
+```
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| content | string | 是 | 公告内容 |
+
+**响应示例：**
+
+```json
+{
+  "code": 0,
+  "message": "公告更新成功",
+  "data": null
+}
+```
+
+---
+
+## 九、枚举值定义
 
 ### machineType（主机类型）
 
@@ -711,11 +1054,13 @@ GET /overview
 | DELETE | /machines/:id | 删除主机 |
 | POST | /machines/:id/check-ssh | SSH连通检测 |
 | POST | /machines/:id/discover-services | Docker服务发现 |
+| POST | /machines/discover-all-services | 全量Docker服务发现 |
+| GET | /ssh-terminal/:id | SSH终端（WebSocket） |
 | GET | /docker-services | 获取Docker服务列表 |
 | POST | /docker-services | 新增Docker服务 |
 | PUT | /docker-services/:id | 编辑Docker服务 |
 | DELETE | /docker-services/:id | 删除Docker服务 |
-| POST | /docker-services/:id/check | 检测服务状态 |
+| POST | /docker-services/:id/check | 连通检测 |
 | GET | /other-services | 获取其他服务列表 |
 | POST | /other-services | 新增其他服务 |
 | PUT | /other-services/:id | 编辑其他服务 |
@@ -724,4 +1069,14 @@ GET /overview
 | POST | /egress-methods | 新增出站方式 |
 | PUT | /egress-methods/:id | 编辑出站方式 |
 | DELETE | /egress-methods/:id | 删除出站方式 |
+| PUT | /egress-methods/batch-status | 批量更新出站方式状态 |
+| DELETE | /egress-methods/batch | 批量删除出站方式 |
+| GET | /egress-methods/health-check | 出站方式健康检查 |
+| POST | /egress-methods/generate-frpc | 生成frpc配置 |
+| POST | /egress-methods/sync-firewall | 同步防火墙规则 |
 | GET | /overview | 获取概览数据 |
+| GET | /operation-logs | 获取操作日志列表 |
+| GET | /config/export | 导出配置 |
+| POST | /config/import | 导入配置 |
+| GET | /notices | 获取公告 |
+| PUT | /notices | 更新公告（管理员） |

@@ -6,3 +6,6 @@ export const updateEgressMethod = (id, data) => request.put(`/egress-methods/${i
 export const deleteEgressMethod = (id) => request.delete(`/egress-methods/${id}`)
 export const syncFirewall = () => request.post('/egress-methods/sync-firewall')
 export const generateFrpc = (ids) => request.post('/egress-methods/generate-frpc', { ids })
+export const batchUpdateStatus = (ids, status) => request.put('/egress-methods/batch-status', { ids, status })
+export const batchDeleteEgress = (ids) => request.delete('/egress-methods/batch', { data: { ids } })
+export const healthCheck = () => request.get('/egress-methods/health-check')

@@ -49,6 +49,18 @@ const routes = [
     name: 'FrpcConfig',
     component: () => import('../views/FrpcConfig.vue'),
     meta: { title: '内网穿透配置' }
+  },
+  {
+    path: '/operation-logs',
+    name: 'OperationLogList',
+    component: () => import('../views/OperationLogList.vue'),
+    meta: { title: '操作日志' }
+  },
+  {
+    path: '/ssh-terminal',
+    name: 'SSHTerminal',
+    component: () => import('../views/SSHTerminal.vue'),
+    meta: { title: 'SSH终端' }
   }
 ]
 

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"service-manage/config"
 	"service-manage/logger"
@@ -20,6 +21,8 @@ func main() {
 	}
 
 	cfg := config.AppConfig
+
+	os.Setenv("GIN_MODE", cfg.Server.Mode)
 
 	logger.InitLog(cfg.Log.Level, cfg.Log.Filename, cfg.Log.MaxSize, cfg.Log.MaxBackups, cfg.Log.MaxAge)
 
@@ -51,6 +54,7 @@ func main() {
 		&model.OtherService{},
 		&model.EgressMethod{},
 		&model.Notice{},
+		&model.OperationLog{},
 	); err != nil {
 		logger.Log.Sugar().Fatalf("自动建表失败: %v", err)
 	}
@@ -58,6 +62,7 @@ func main() {
 	cleanupDatabase(db)
 	seedAdminUser(db)
 	backfillExistingData(db)
+	seedNotice(db)
 
 	logger.Log.Info("数据库表初始化完成")
 
@@ -94,27 +99,44 @@ func dropForeignKeyIfExists(db *gorm.DB, table, fkName string) {
 
 func seedAdminUser(db *gorm.DB) {
 	var count int64
-	db.Model(&model.User{}).Where("username = ?", "poke").Count(&count)
+	adminUser := config.AppConfig.Auth.AdminUsername
+	adminPass := config.AppConfig.Auth.AdminPassword
+	db.Model(&model.User{}).Where("username = ?", adminUser).Count(&count)
 	if count == 0 {
-		hash, _ := bcrypt.GenerateFromPassword([]byte("shiwan233"), bcrypt.DefaultCost)
+		hash, _ := bcrypt.GenerateFromPassword([]byte(adminPass), bcrypt.DefaultCost)
 		db.Create(&model.User{
-			Username: "poke",
+			Username: adminUser,
 			Password: string(hash),
 			Role:     model.RoleSuperAdmin,
 			Status:   1,
 		})
-		logger.Log.Info("默认超级管理员账号已创建: poke / shiwan233")
+		logger.Log.Sugar().Infof("默认超级管理员账号已创建: %s", adminUser)
 	}
 }
 
 func backfillExistingData(db *gorm.DB) {
 	var admin model.User
-	if err := db.Where("username = ?", "poke").First(&admin).Error; err != nil {
+	if err := db.Where("username = ?", config.AppConfig.Auth.AdminUsername).First(&admin).Error; err != nil {
 		return
 	}
 
 	tables := []string{"machines", "docker_services", "other_services", "egress_methods"}
 	for _, table := range tables {
 		db.Exec(fmt.Sprintf("UPDATE %s SET user_id = ? WHERE user_id = 0 OR user_id IS NULL", table), admin.ID)
+	}
+}
+
+func seedNotice(db *gorm.DB) {
+	var notice model.Notice
+	if err := db.Where("title = ?", "系统更新通知").First(&notice).Error; err != nil {
+		db.Create(&model.Notice{
+			Title:   "系统更新通知",
+			Content: "【2026-05-17 更新】\n\n1. 所有配置抽象到 config.yaml，项目开箱即用\n2. FRP 配置全自动发现：选了出站服务后自动 inspect 容器、读取配置、解析端口和 token\n3. SSH 终端上线，浏览器直连主机\n4. 健康检查改为公网探测 + 并发超时\n5. 仪表盘通知公告替代最近操作，支持在线编辑\n6. Docker 服务连通检测改为并发执行\n7. 代理名称统一更名为隧道名称",
+			Status:  1,
+		})
+	} else {
+		db.Model(&notice).Updates(map[string]interface{}{
+			"content": "【2026-05-17 更新】\n\n1. 所有配置抽象到 config.yaml，项目开箱即用\n2. FRP 配置全自动发现：选了出站服务后自动 inspect 容器、读取配置、解析端口和 token\n3. SSH 终端上线，浏览器直连主机\n4. 健康检查改为公网探测 + 并发超时\n5. 仪表盘通知公告替代最近操作，支持在线编辑\n6. Docker 服务连通检测改为并发执行\n7. 代理名称统一更名为隧道名称",
+		})
 	}
 }

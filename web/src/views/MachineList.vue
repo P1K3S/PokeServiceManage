@@ -27,7 +27,7 @@
         <el-form-item>
           <el-button type="primary" @click="fetchData">查询</el-button>
           <el-button @click="handleCheckAllSSH" :loading="allSshChecking" style="margin-left: 8px">连通检测</el-button>
-          <el-button @click="handleDiscoverAllServices" :loading="allDiscovering" style="margin-left: 8px">Docker服务检测</el-button>
+          <el-button @click="handleDiscoverAllServices" :loading="allDiscovering" style="margin-left: 8px">Docker服务发现</el-button>
         </el-form-item>
       </el-form>
 
@@ -73,7 +73,7 @@
           </template>
         </el-table-column>
         <el-table-column prop="serviceCount" label="服务数" width="70" align="center" />
-        <el-table-column label="操作" width="220" fixed="right" align="center">
+        <el-table-column label="操作" width="260" fixed="right" align="center">
           <template #default="{ row }">
             <el-button type="info" link size="small" @click="viewDetail(row)">查看</el-button>
             <el-button type="primary" link size="small" @click="openForm('edit', row)">编辑</el-button>

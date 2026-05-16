@@ -96,6 +96,10 @@ func (h *OtherServiceHandler) Create(c *gin.Context) {
 		jsonError(c, "创建其他服务失败")
 		return
 	}
+
+	uid, uname := getLogUserInfo(c)
+	logOperation(h.DB, uid, uname, "create", "other_service", service.ID, service.Name)
+
 	jsonSuccess(c, gin.H{"id": service.ID})
 }
 
@@ -137,6 +141,9 @@ func (h *OtherServiceHandler) Update(c *gin.Context) {
 		}
 	}
 
+	uid, uname := getLogUserInfo(c)
+	logOperation(h.DB, uid, uname, "update", "other_service", uint(id), service.Name)
+
 	jsonSuccess(c, nil)
 }
 
@@ -163,5 +170,9 @@ func (h *OtherServiceHandler) Delete(c *gin.Context) {
 	}
 
 	tx.Commit()
+
+	uid, uname := getLogUserInfo(c)
+	logOperation(h.DB, uid, uname, "delete", "other_service", uint(id), service.Name)
+
 	jsonSuccess(c, nil)
 }

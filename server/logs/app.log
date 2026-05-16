@@ -88,3 +88,76 @@
 2026-05-17T04:39:42.416+0800	FATAL	server/main.go:69	服务启动失败: listen tcp :8080: bind: Only one usage of each socket address (protocol/network address/port) is normally permitted.
 2026-05-17T04:39:58.253+0800	INFO	server/main.go:62	数据库表初始化完成
 2026-05-17T04:39:58.254+0800	INFO	server/main.go:67	服务启动于 :8080
+2026-05-17T05:05:01.860+0800	INFO	server/main.go:62	数据库表初始化完成
+2026-05-17T05:05:01.862+0800	INFO	server/main.go:67	服务启动于 :8080
+2026-05-17T05:29:08.739+0800	INFO	server/main.go:63	数据库表初始化完成
+2026-05-17T05:29:08.741+0800	INFO	server/main.go:68	服务启动于 :8080
+2026-05-17T05:36:43.920+0800	INFO	server/main.go:63	数据库表初始化完成
+2026-05-17T05:36:43.922+0800	INFO	server/main.go:68	服务启动于 :8080
+2026-05-17T05:43:14.170+0800	INFO	server/main.go:63	数据库表初始化完成
+2026-05-17T05:43:14.171+0800	INFO	server/main.go:68	服务启动于 :8080
+2026-05-17T05:46:16.540+0800	INFO	server/main.go:63	数据库表初始化完成
+2026-05-17T05:46:16.542+0800	INFO	server/main.go:68	服务启动于 :8080
+2026-05-17T06:04:11.635+0800	INFO	server/main.go:66	数据库表初始化完成
+2026-05-17T06:04:11.636+0800	INFO	server/main.go:71	服务启动于 :8080
+2026-05-17T06:10:29.447+0800	INFO	server/main.go:66	数据库表初始化完成
+2026-05-17T06:10:29.448+0800	INFO	server/main.go:71	服务启动于 :8080
+2026-05-17T06:11:00.479+0800	ERROR	handler/machine.go:461	主机[mittt-NAS] Docker服务发现失败: docker ps 执行失败: dial tcp 47.104.217.236:9711: connectex: No connection could be made because the target machine actively refused it.
+2026-05-17T06:12:02.840+0800	ERROR	handler/machine.go:461	主机[mittt-NAS] Docker服务发现失败: docker ps 执行失败: dial tcp: lookup 47.104.217.2361: no such host
+2026-05-17T06:12:26.688+0800	ERROR	handler/machine.go:461	主机[mittt-NAS] Docker服务发现失败: docker ps 执行失败: dial tcp 47.104.217.236:9711: connectex: No connection could be made because the target machine actively refused it.
+2026-05-17T06:14:24.032+0800	INFO	server/main.go:66	数据库表初始化完成
+2026-05-17T06:14:24.033+0800	INFO	server/main.go:71	服务启动于 :8080
+2026-05-17T06:14:29.842+0800	ERROR	handler/machine.go:487	主机[mittt-NAS] Docker服务发现失败: docker ps 执行失败: dial tcp 47.104.217.236:9711: connectex: No connection could be made because the target machine actively refused it.
+2026-05-17T06:14:30.699+0800	INFO	handler/machine.go:568	主机[Poke-青岛] Docker服务发现完成: 发现 0 个容器
+2026-05-17T06:14:31.396+0800	INFO	handler/machine.go:568	主机[Poke-NAS] Docker服务发现完成: 发现 3 个容器
+2026-05-17T06:14:45.436+0800	ERROR	handler/machine.go:487	主机[mittt-NAS] Docker服务发现失败: docker ps 执行失败: dial tcp 47.104.217.236:9711: connectex: No connection could be made because the target machine actively refused it.
+2026-05-17T06:14:46.189+0800	INFO	handler/machine.go:568	主机[Poke-青岛] Docker服务发现完成: 发现 0 个容器
+2026-05-17T06:14:46.751+0800	INFO	handler/machine.go:568	主机[Poke-NAS] Docker服务发现完成: 发现 3 个容器
+2026-05-17T06:16:19.134+0800	INFO	server/main.go:66	数据库表初始化完成
+2026-05-17T06:16:19.136+0800	INFO	server/main.go:71	服务启动于 :8080
+2026-05-17T06:16:29.629+0800	ERROR	handler/machine.go:487	主机[mittt-NAS] Docker服务发现失败: docker ps 执行失败: dial tcp 47.104.217.236:9711: connectex: No connection could be made because the target machine actively refused it.
+2026-05-17T06:16:30.343+0800	INFO	handler/machine.go:576	主机[Poke-青岛] Docker服务发现完成: 发现 0 个容器
+2026-05-17T06:16:31.034+0800	INFO	handler/machine.go:576	主机[Poke-NAS] Docker服务发现完成: 发现 3 个容器
+2026-05-17T06:16:54.667+0800	ERROR	handler/machine.go:487	主机[mittt-NAS] Docker服务发现失败: docker ps 执行失败: dial tcp 47.104.217.236:9711: connectex: No connection could be made because the target machine actively refused it.
+2026-05-17T06:16:55.395+0800	INFO	handler/machine.go:576	主机[Poke-青岛] Docker服务发现完成: 发现 0 个容器
+2026-05-17T06:16:55.906+0800	INFO	handler/machine.go:576	主机[Poke-NAS] Docker服务发现完成: 发现 3 个容器
+2026-05-17T06:19:03.449+0800	INFO	server/main.go:66	数据库表初始化完成
+2026-05-17T06:19:03.450+0800	INFO	server/main.go:71	服务启动于 :8080
+2026-05-17T06:19:08.024+0800	ERROR	handler/machine.go:487	主机[mittt-NAS] Docker服务发现失败: docker ps 执行失败: dial tcp 47.104.217.236:9711: connectex: No connection could be made because the target machine actively refused it.
+2026-05-17T06:19:08.376+0800	INFO	handler/machine.go:496	主机[Poke-青岛] docker ps 输出(1587字节): {"Command":"\"docker-entrypoint.sh\"","CreatedAt":"2026-05-14 14:32:18 +0800 CST","ID":"11ea8af1b5b5","Image":"snowdreamtech/frps:latest","Labels":"com.docker.compose.config-hash=9b5d0b52fa15d3274cf2af0f004b1b08e12bc8a391c4a27c6fb681fe2551ffa4,com.docker.compose.container-number=1,com.docker.compose.depends_on=,com.docker.compose.image=sha256:f05072fb2711c653cb480bf2331c8890ad1fbcd68f9a6b3237845476a6f9e0a5,com.docker.compose.oneoff=False,com.docker.compose.project.config_files=/mnt/Docker/poke_c
+2026-05-17T06:19:08.799+0800	INFO	handler/machine.go:576	主机[Poke-青岛] Docker服务发现完成: 发现 0 个容器
+2026-05-17T06:19:09.237+0800	INFO	handler/machine.go:496	主机[Poke-NAS] docker ps 输出(4306字节): {"Command":"\"docker-entrypoint.s…\"","CreatedAt":"2026-05-17 03:24:33 +0800 CST","ID":"547157263a35","Image":"mysql:9.6.0","Labels":"com.docker.compose.config-hash=b636e43bcaed318dee7994406ff9977c993a4d28d7804627c5eb8ea393cbb63f,com.docker.compose.container-number=1,com.docker.compose.depends_on=,com.docker.compose.image=sha256:f4bf110498531f91e80936e0181b8b63bac636481065a63df2e63e1aac2b1548,com.docker.compose.oneoff=False,com.docker.compose.project.config_files=/vol1/1000/Docker/mysql/docker
+2026-05-17T06:19:09.497+0800	INFO	handler/machine.go:576	主机[Poke-NAS] Docker服务发现完成: 发现 3 个容器
+2026-05-17T06:22:01.470+0800	INFO	server/main.go:66	数据库表初始化完成
+2026-05-17T06:22:01.473+0800	INFO	server/main.go:71	服务启动于 :8080
+2026-05-17T06:22:07.681+0800	ERROR	handler/machine.go:487	主机[mittt-NAS] Docker服务发现失败: docker ps 执行失败: dial tcp 47.104.217.236:9711: connectex: No connection could be made because the target machine actively refused it.
+2026-05-17T06:22:08.476+0800	INFO	handler/machine.go:583	主机[Poke-青岛] Docker服务发现完成: 发现 0 个容器
+2026-05-17T06:22:09.170+0800	INFO	handler/machine.go:583	主机[Poke-NAS] Docker服务发现完成: 发现 3 个容器
+2026-05-17T06:23:03.590+0800	INFO	server/main.go:66	数据库表初始化完成
+2026-05-17T06:23:03.592+0800	INFO	server/main.go:71	服务启动于 :8080
+2026-05-17T06:23:09.907+0800	ERROR	handler/machine.go:487	主机[mittt-NAS] Docker服务发现失败: docker ps 执行失败: dial tcp 47.104.217.236:9711: connectex: No connection could be made because the target machine actively refused it.
+2026-05-17T06:23:10.292+0800	DEBUG	handler/machine.go:496	主机[Poke-青岛] docker ps 输出(1587字节): {"Command":"\"docker-entrypoint.sh\"","CreatedAt":"2026-05-14 14:32:18 +0800 CST","ID":"11ea8af1b5b5","Image":"snowdreamtech/frps:latest","Labels":"com.docker.compose.config-hash=9b5d0b52fa15d3274cf2af0f004b1b08e12bc8a391c4a27c6fb681fe2551ffa4,com.docker.compose.container-number=1,com.docker.compose.depends_on=,com.docker.compose.image=sha256:f05072fb2711c653cb480bf2331c8890ad1fbcd68f9a6b3237845476a6f9e0a5,com.docker.compose.oneoff=False,com.docker.compose.project.config_files=/mnt/Docker/poke_c
+2026-05-17T06:23:10.709+0800	INFO	handler/machine.go:583	主机[Poke-青岛] Docker服务发现完成: 发现 0 个容器
+2026-05-17T06:23:10.874+0800	DEBUG	handler/machine.go:496	主机[Poke-NAS] docker ps 输出(4306字节): {"Command":"\"docker-entrypoint.s…\"","CreatedAt":"2026-05-17 03:24:33 +0800 CST","ID":"547157263a35","Image":"mysql:9.6.0","Labels":"com.docker.compose.config-hash=b636e43bcaed318dee7994406ff9977c993a4d28d7804627c5eb8ea393cbb63f,com.docker.compose.container-number=1,com.docker.compose.depends_on=,com.docker.compose.image=sha256:f4bf110498531f91e80936e0181b8b63bac636481065a63df2e63e1aac2b1548,com.docker.compose.oneoff=False,com.docker.compose.project.config_files=/vol1/1000/Docker/mysql/docker
+2026-05-17T06:23:11.137+0800	INFO	handler/machine.go:583	主机[Poke-NAS] Docker服务发现完成: 发现 3 个容器
+2026-05-17T06:24:57.945+0800	INFO	server/main.go:66	数据库表初始化完成
+2026-05-17T06:24:57.947+0800	INFO	server/main.go:71	服务启动于 :8080
+2026-05-17T06:25:03.171+0800	ERROR	handler/machine.go:487	主机[mittt-NAS] Docker服务发现失败: docker ps 执行失败: dial tcp 47.104.217.236:9711: connectex: No connection could be made because the target machine actively refused it.
+2026-05-17T06:25:03.540+0800	DEBUG	handler/machine.go:496	主机[Poke-青岛] docker ps 输出(1587字节): {"Command":"\"docker-entrypoint.sh\"","CreatedAt":"2026-05-14 14:32:18 +0800 CST","ID":"11ea8af1b5b5","Image":"snowdreamtech/frps:latest","Labels":"com.docker.compose.config-hash=9b5d0b52fa15d3274cf2af0f004b1b08e12bc8a391c4a27c6fb681fe2551ffa4,com.docker.compose.container-number=1,com.docker.compose.depends_on=,com.docker.compose.image=sha256:f05072fb2711c653cb480bf2331c8890ad1fbcd68f9a6b3237845476a6f9e0a5,com.docker.compose.oneoff=False,com.docker.compose.project.config_files=/mnt/Docker/poke_c
+2026-05-17T06:25:03.943+0800	INFO	handler/machine.go:547	主机[Poke-青岛] 容器[frps]已锁定，跳过更新
+2026-05-17T06:25:03.943+0800	INFO	handler/machine.go:586	主机[Poke-青岛] Docker服务发现完成: 发现 1 个容器
+2026-05-17T06:25:04.180+0800	DEBUG	handler/machine.go:496	主机[Poke-NAS] docker ps 输出(4306字节): {"Command":"\"docker-entrypoint.s…\"","CreatedAt":"2026-05-17 03:24:33 +0800 CST","ID":"547157263a35","Image":"mysql:9.6.0","Labels":"com.docker.compose.config-hash=b636e43bcaed318dee7994406ff9977c993a4d28d7804627c5eb8ea393cbb63f,com.docker.compose.container-number=1,com.docker.compose.depends_on=,com.docker.compose.image=sha256:f4bf110498531f91e80936e0181b8b63bac636481065a63df2e63e1aac2b1548,com.docker.compose.oneoff=False,com.docker.compose.project.config_files=/vol1/1000/Docker/mysql/docker
+2026-05-17T06:25:04.420+0800	INFO	handler/machine.go:586	主机[Poke-NAS] Docker服务发现完成: 发现 3 个容器
+2026-05-17T06:33:02.687+0800	INFO	server/main.go:67	数据库表初始化完成
+2026-05-17T06:33:02.688+0800	INFO	server/main.go:72	服务启动于 :8080
+2026-05-17T06:33:06.078+0800	INFO	server/main.go:67	数据库表初始化完成
+2026-05-17T06:33:06.080+0800	INFO	server/main.go:72	服务启动于 :8080
+2026-05-17T06:34:14.365+0800	INFO	frp/discover.go:162	FRP配置自动发现成功(容器frps@47.104.217.236): bindPort=62500
+2026-05-17T06:39:39.543+0800	INFO	server/main.go:67	数据库表初始化完成
+2026-05-17T06:39:39.544+0800	INFO	server/main.go:72	服务启动于 :8080
+2026-05-17T06:44:15.157+0800	INFO	server/main.go:67	数据库表初始化完成
+2026-05-17T06:44:15.159+0800	INFO	server/main.go:72	服务启动于 :8080
+2026-05-17T06:48:17.644+0800	INFO	server/main.go:67	数据库表初始化完成
+2026-05-17T06:48:17.645+0800	INFO	server/main.go:72	服务启动于 :8080
+2026-05-17T06:56:17.437+0800	INFO	server/main.go:67	数据库表初始化完成
+2026-05-17T06:56:17.442+0800	INFO	server/main.go:72	服务启动于 :8080

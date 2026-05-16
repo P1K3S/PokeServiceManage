@@ -41,6 +41,14 @@
           <el-icon><Link /></el-icon>
           <span>内网穿透配置</span>
         </el-menu-item>
+        <el-menu-item index="/ssh-terminal">
+          <el-icon><Monitor /></el-icon>
+          <span>SSH终端</span>
+        </el-menu-item>
+        <el-menu-item index="/operation-logs">
+          <el-icon><Document /></el-icon>
+          <span>操作日志</span>
+        </el-menu-item>
       </el-menu>
     </el-aside>
     <el-container class="main-area">
@@ -63,7 +71,7 @@
 <script setup>
 import { useRoute, useRouter } from 'vue-router'
 import { ref, watch } from 'vue'
-import { DataAnalysis, Monitor, Setting, Grid, Connection, Link } from '@element-plus/icons-vue'
+import { DataAnalysis, Monitor, Setting, Grid, Connection, Link, Document } from '@element-plus/icons-vue'
 import { useAuthStore } from './stores/auth'
 
 const route = useRoute()

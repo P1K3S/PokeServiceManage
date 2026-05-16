@@ -5,10 +5,18 @@ import (
 	"strconv"
 	"time"
 
+	"service-manage/config"
+
 	"golang.org/x/crypto/ssh"
 )
 
-const DefaultTimeout = 5 * time.Second
+func getDefaultTimeout() time.Duration {
+	t := config.AppConfig.SSH.Timeout
+	if t <= 0 {
+		t = 5
+	}
+	return time.Duration(t) * time.Second
+}
 
 type Config struct {
 	Host     string
@@ -20,7 +28,7 @@ type Config struct {
 
 func NewClient(cfg *Config) (*ssh.Client, error) {
 	if cfg.Timeout == 0 {
-		cfg.Timeout = DefaultTimeout
+		cfg.Timeout = getDefaultTimeout()
 	}
 
 	config := &ssh.ClientConfig{
@@ -63,7 +71,7 @@ func CheckConnection(cfg *Config) error {
 	}
 
 	if cfg.Timeout == 0 {
-		cfg.Timeout = DefaultTimeout
+		cfg.Timeout = getDefaultTimeout()
 	}
 	addr := net.JoinHostPort(cfg.Host, strconv.Itoa(cfg.Port))
 	dialer := net.Dialer{Timeout: cfg.Timeout}

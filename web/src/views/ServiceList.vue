@@ -25,7 +25,7 @@
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="fetchData">查询</el-button>
-          <el-button @click="handleCheckAllStatus" :loading="allChecking" style="margin-left: 8px">检测所有状态</el-button>
+          <el-button @click="handleCheckAllStatus" :loading="allChecking" style="margin-left: 8px">连通检测</el-button>
         </el-form-item>
       </el-form>
 
@@ -57,7 +57,7 @@
         </el-table-column>
         <el-table-column prop="egressCount" label="出站" width="65" align="center" />
         <el-table-column prop="remark" label="备注" min-width="140" show-overflow-tooltip align="center" />
-        <el-table-column label="操作" width="220" fixed="right" align="center">
+        <el-table-column label="操作" width="260" fixed="right" align="center">
           <template #default="{ row }">
             <el-button type="info" link size="small" @click="viewDetail(row)">查看</el-button>
             <el-button type="primary" link size="small" @click="openForm('edit', row)">编辑</el-button>
@@ -356,7 +356,7 @@ const handleCheckAllStatus = async () => {
   allChecking.value = true
   let running = 0
   let stopped = 0
-  for (const s of list.value) {
+  const promises = list.value.map(async (s) => {
     try {
       const res = await checkService(s.id)
       s.status = res.data.status
@@ -368,7 +368,8 @@ const handleCheckAllStatus = async () => {
     } catch {
       stopped++
     }
-  }
+  })
+  await Promise.all(promises)
   ElMessage.success(`检测完成：运行中 ${running} 个，已停止 ${stopped} 个`)
   fetchData()
   allChecking.value = false

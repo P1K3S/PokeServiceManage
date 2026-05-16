@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"service-manage/config"
 	"service-manage/model"
 	sshutil "service-manage/utils/ssh"
 
@@ -99,6 +100,10 @@ func (h *DockerServiceHandler) Create(c *gin.Context) {
 		jsonError(c, "创建服务失败")
 		return
 	}
+
+	uid, uname := getLogUserInfo(c)
+	logOperation(h.DB, uid, uname, "create", "docker_service", service.ID, service.Name)
+
 	jsonSuccess(c, gin.H{"id": service.ID})
 }
 
@@ -146,6 +151,9 @@ func (h *DockerServiceHandler) Update(c *gin.Context) {
 		}
 	}
 
+	uid, uname := getLogUserInfo(c)
+	logOperation(h.DB, uid, uname, "update", "docker_service", uint(id), service.Name)
+
 	jsonSuccess(c, nil)
 }
 
@@ -172,6 +180,10 @@ func (h *DockerServiceHandler) Delete(c *gin.Context) {
 	}
 
 	tx.Commit()
+
+	uid, uname := getLogUserInfo(c)
+	logOperation(h.DB, uid, uname, "delete", "docker_service", uint(id), service.Name)
+
 	jsonSuccess(c, nil)
 }
 
@@ -193,7 +205,7 @@ func (h *DockerServiceHandler) Check(c *gin.Context) {
 	}
 	sshPort := machine.SSHPort
 	if sshPort == 0 {
-		sshPort = 22
+		sshPort = config.AppConfig.SSH.DefaultPort
 	}
 	cmd := fmt.Sprintf("docker ps --format '{{.Names}}' | grep -i %s", service.Name)
 	output, err := sshutil.RunCommand(&sshutil.Config{

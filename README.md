@@ -6,13 +6,20 @@
 
 | 模块 | 说明 |
 |------|------|
-| 仪表盘 | 主机/服务总数、在线状态、最近主机概览 |
-| 主机管理 | 添加/编辑/删除主机，SSH 连通性检测，Docker 服务自动发现 |
+| 仪表盘 | Docker 服务总数、运行中Docker服务、通知公告卡片 |
+| 主机管理 | 添加/编辑/删除主机，连通检测，Docker 服务发现 |
 | Docker 服务管理 | 容器端口映射、运行状态、所属主机关联 |
-| 其他服务管理 | 非 Docker 部署的服务记录与管理 |
-| 出站方式管理 | 公网/内网地址映射，防火墙规则同步，本机直连/出站服务两种模式 |
-| 内网穿透配置 | 根据出站方式自动生成 frpc.toml 配置文件 |
-| 通知公告 | 内网穿透页右侧通知栏，管理员可编辑，所有用户可查看 |
+| 其他服务记录 | 非 Docker 部署的服务记录与管理 |
+| 出站方式管理 | 公网/内网地址映射，防火墙规则同步，本机直连/出站服务两种模式，批量操作，健康检查（公网 IP + 并发超时） |
+| 内网穿透配置 | 根据出站方式自动生成 frpc.toml 配置文件，隧道名称管理，FRP 配置自动发现 |
+| SSH 终端 | 浏览器内直接 SSH 连接主机终端 |
+| 操作日志 | 记录系统关键操作，便于审计和回溯 |
+| 通知公告 | 仪表盘页通知卡片，管理员可编辑，所有用户可查看 |
+| 配置导入导出 | 系统配置 JSON 导出/导入，方便迁移和备份 |
+
+## 侧边栏导航顺序
+
+仪表盘 → 主机管理 → Docker服务管理 → 其他服务记录 → 出站方式管理 → 内网穿透配置 → SSH终端 → 操作日志
 
 ## 技术栈
 
@@ -23,6 +30,8 @@
 - MySQL
 - JWT 认证
 - Zap + Lumberjack (日志)
+- gorilla/websocket (SSH 终端)
+- x/crypto/ssh (SSH 连接)
 
 **前端**
 - Vue 3
@@ -31,6 +40,7 @@
 - Pinia (状态管理)
 - Vue Router
 - Axios
+- xterm.js (终端模拟器)
 
 ## 快速开始
 
@@ -48,7 +58,7 @@
 ```yaml
 server:
   port: 8080
-  mode: debug
+  mode: release
 
 database:
   host: 127.0.0.1
@@ -64,13 +74,79 @@ log:
   level: info
   filename: logs/app.log
   max_size: 100
-  max_backbacks: 7
+  max_backups: 7
   max_age: 30
 
+jwt:
+  secret: "your-jwt-secret-key"
+  expire_hours: 168
+
+auth:
+  register_code: "your-register-code"
+  admin_username: "admin"
+  admin_password: "your-admin-password"
+
 frp:
-  server_port: 62500
-  auth_token: your_token
+  server_port: 7000
+  auth_token: "your-frp-auth-token"
+
+port_range:
+  protected_ports:
+    - 22
+    - "62500-62501"
+  user_port_min: 9701
+  user_port_max: 9799
+
+ssh:
+  default_port: 22
+  default_user: "root"
+  timeout: 5
+  terminal_timeout: 10
+
+health_check:
+  timeout: 1
+  use_public_ip: true
+
+cors:
+  allow_origins:
+    - "*"
+
+websocket:
+  check_origin: true
 ```
+
+### 配置说明
+
+| 配置节 | 字段 | 说明 |
+|--------|------|------|
+| `server` | `mode` | Gin 运行模式，`release` 为生产模式，`debug` 为调试模式 |
+| `jwt` | `secret` | JWT 签名密钥，请修改为随机字符串 |
+| `jwt` | `expire_hours` | Token 过期时间（小时），默认 168（7天） |
+| `auth` | `register_code` | 用户注册认证码 |
+| `auth` | `admin_username` / `admin_password` | 首次启动自动创建的超级管理员账号 |
+| `frp` | `server_port` | FRP 服务端端口（自动发现失败时的回退值） |
+| `frp` | `auth_token` | FRP 认证令牌（自动发现失败时的回退值） |
+| `port_range` | `protected_ports` | 受保护端口列表，支持单端口（`22`）和范围（`"62500-62501"`） |
+| `port_range` | `user_port_min` / `user_port_max` | 普通用户可使用的端口范围 |
+| `ssh` | `default_port` / `default_user` | 新增主机时的 SSH 默认端口和用户名 |
+| `ssh` | `timeout` | SSH 命令执行超时（秒） |
+| `ssh` | `terminal_timeout` | SSH 终端连接超时（秒） |
+| `health_check` | `timeout` | 健康检查 TCP 探测超时（秒），并发执行 |
+| `health_check` | `use_public_ip` | 健康检查是否使用公网 IP 探测，`true` 时优先用公网地址 |
+| `cors` | `allow_origins` | CORS 允许的来源列表，`["*"]` 表示允许所有 |
+| `websocket` | `check_origin` | WebSocket 是否跳过来源检查，`true` 表示允许所有来源 |
+
+### FRP 配置自动发现
+
+系统通过以下流程自动发现 FRP 服务端配置，无需手动指定主机、容器或配置文件路径：
+
+1. **选择出站方式**：用户在内网穿透配置页面选择一个出站方式（即 frps 所在主机的映射）
+2. **SSH 连接主机**：系统通过 SSH 连接到该出站方式对应的主机
+3. **Docker Inspect 容器**：在主机上执行 `docker inspect` 查找 frps 容器
+4. **定位配置文件挂载**：从容器的挂载信息中找到 frps.toml 配置文件的宿主机路径
+5. **读取并解析配置**：通过 SSH 读取配置文件内容，解析 `bindPort` 和 `auth.token`
+
+`config.yaml` 中的 `frp.server_port` 和 `frp.auth_token` 仅作为自动发现失败时的回退值。发现结果缓存 5 分钟，frps 配置变更后系统会自动感知。
 
 ### 方式一：Windows 一键启动
 
@@ -116,39 +192,49 @@ docker run -d \
 
 ## 默认账号
 
-系统启动时会自动创建超级管理员账号：
+系统启动时会根据 `config.yaml` 中 `auth.admin_username` 和 `auth.admin_password` 自动创建超级管理员账号。
 
-| 字段 | 值 |
-|------|----|
-| 用户名 | poke |
-| 密码 | shiwan233 |
-
-注册新用户需要认证码 `pokeservicemanage`。
+注册新用户需要输入 `auth.register_code` 中配置的认证码。
 
 ## 用户角色
 
 | 角色 | 权限 |
 |------|------|
-| super_admin | 查看所有数据，编辑通知，管理所有资源 |
-| user | 仅查看自己创建的主机和服务，查看通知 |
+| super_admin | 查看所有数据，编辑通知，管理所有资源，配置导入导出 |
+| user | 仅查看自己创建的主机和服务，查看通知，使用端口范围受限 |
 
 ## 项目结构
 
 ```
 PokeServiceManage/
 ├── server/                  # Go 后端
-│   ├── config/              # 配置加载
+│   ├── config/              # 配置加载与结构定义
 │   ├── handler/             # 请求处理器
 │   │   ├── auth.go          # 认证（登录/注册/用户信息）
 │   │   ├── machine.go       # 主机管理 + Docker 发现
 │   │   ├── docker_service.go
 │   │   ├── other_service.go
-│   │   ├── egress_method.go # 出站方式 + 防火墙同步 + frpc 生成
-│   │   └── notice.go        # 通知公告
+│   │   ├── egress_method.go # 出站方式 + 防火墙同步 + frpc 生成 + 健康检查
+│   │   ├── ssh_terminal.go  # SSH 终端 WebSocket
+│   │   ├── operation_log.go # 操作日志
+│   │   ├── config_handler.go # 配置导入导出
+│   │   ├── notice.go        # 通知公告
+│   │   ├── response.go      # 统一响应
+│   │   └── helper.go        # 公共工具函数
 │   ├── middleware/           # JWT 认证 / CORS
 │   ├── model/               # GORM 模型
+│   │   ├── machine.go
+│   │   ├── docker_service.go
+│   │   ├── other_service.go
+│   │   ├── egress_method.go
+│   │   ├── user.go
+│   │   ├── notice.go
+│   │   └── operation_log.go
 │   ├── router/              # 路由注册
-│   ├── utils/               # JWT 工具 / SSH 工具
+│   ├── utils/               # 工具包
+│   │   ├── jwt/             # JWT 生成与解析
+│   │   ├── ssh/             # SSH 连接与命令执行
+│   │   └── frp/             # FRP 配置自动发现（Docker inspect + 配置解析）
 │   ├── logger/              # 日志初始化
 │   ├── main.go              # 入口
 │   └── config.yaml          # 配置文件
@@ -156,12 +242,12 @@ PokeServiceManage/
 │   ├── src/
 │   │   ├── api/             # Axios 请求封装
 │   │   ├── router/          # 路由定义
-│   │   ├── stores/          # Pinia 状态
+│   │   ├── stores/          # Pinia 状态管理
 │   │   ├── views/           # 页面组件
 │   │   ├── styles/          # 全局样式
 │   │   ├── App.vue          # 根组件（侧边栏+顶栏布局）
 │   │   └── main.js          # 入口
-│   └── vite.config.js       # Vite 配置（含 API 代理）
+│   └── vite.config.js       # Vite 配置（含 API 代理 + WebSocket）
 ├── Dockerfile               # 多阶段构建
 ├── start.bat                # Windows 一键启动脚本
 └── .dockerignore
@@ -178,13 +264,20 @@ PokeServiceManage/
 | GET | /api/user-info | 当前用户信息 |
 | GET | /api/overview | 仪表盘概览 |
 | GET/POST/PUT/DELETE | /api/machines | 主机 CRUD |
-| POST | /api/machines/:id/check-ssh | SSH 连通性检测 |
+| POST | /api/machines/:id/check-ssh | 连通检测 |
 | POST | /api/machines/:id/discover-services | Docker 服务发现 |
+| GET | /api/ssh-terminal/:id | SSH 终端（WebSocket） |
 | GET/POST/PUT/DELETE | /api/docker-services | Docker 服务 CRUD |
 | POST | /api/docker-services/:id/check | 服务状态检测 |
 | GET/POST/PUT/DELETE | /api/other-services | 其他服务 CRUD |
 | GET/POST/PUT/DELETE | /api/egress-methods | 出站方式 CRUD |
 | POST | /api/egress-methods/sync-firewall | 防火墙同步 |
 | POST | /api/egress-methods/generate-frpc | 生成 frpc 配置 |
+| PUT | /api/egress-methods/batch-status | 批量启用/停用 |
+| DELETE | /api/egress-methods/batch | 批量删除 |
+| GET | /api/egress-methods/health-check | 健康检查（公网 IP + 并发超时） |
 | GET | /api/notices | 获取通知 |
 | PUT | /api/notices | 编辑通知（仅管理员） |
+| GET | /api/operation-logs | 操作日志列表 |
+| GET | /api/config/export | 导出配置 |
+| POST | /api/config/import | 导入配置 |

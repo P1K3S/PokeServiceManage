@@ -1,6 +1,6 @@
 server:
   port: 8080
-  mode: debug
+  mode: release
 
 database:
   host: 10.10.10.2
@@ -13,12 +13,45 @@ database:
   max_open_conns: 100
 
 log:
-  level: info
+  level: debug
   filename: logs/app.log
   max_size: 100
   max_backups: 7
   max_age: 30
 
+jwt:
+  secret: "poke-service-manage-jwt-secret-key-2024"
+  expire_hours: 168
+
+auth:
+  register_code: "pokeservicemanage"
+  admin_username: "poke"
+  admin_password: "shiwan233"
+
 frp:
   server_port: 62500
   auth_token: "shiwan233"
+
+port_range:
+  protected_ports:
+    - 22
+    - "62500-62501"
+  user_port_min: 9701
+  user_port_max: 9799
+
+ssh:
+  default_port: 22
+  default_user: "root"
+  timeout: 5
+  terminal_timeout: 10
+
+health_check:
+  timeout: 1
+  use_public_ip: true
+
+cors:
+  allow_origins:
+    - "*"
+
+websocket:
+  check_origin: true

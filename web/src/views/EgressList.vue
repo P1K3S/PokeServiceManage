@@ -5,8 +5,14 @@
         <div style="display: flex; justify-content: space-between; align-items: center">
           <span>出站方式列表</span>
           <div>
+            <el-button v-if="selectedIds.length > 0" type="success" @click="handleBatchStatus(1)">批量启用</el-button>
+            <el-button v-if="selectedIds.length > 0" type="warning" @click="handleBatchStatus(0)">批量停用</el-button>
+            <el-button v-if="selectedIds.length > 0" type="danger" @click="handleBatchDelete">批量删除</el-button>
             <el-button type="warning" @click="handleSyncFirewall" :loading="syncing">
               <el-icon style="margin-right: 4px"><Monitor /></el-icon>同步防火墙
+            </el-button>
+            <el-button type="success" @click="handleHealthCheck" :loading="healthChecking">
+              <el-icon style="margin-right: 4px"><Monitor /></el-icon>健康检查
             </el-button>
             <el-button type="primary" @click="openForm('create')">新增出站方式</el-button>
           </div>
@@ -36,8 +42,9 @@
         </el-form-item>
       </el-form>
 
-      <el-table :data="list" stripe border v-loading="loading">
-        <el-table-column prop="proxyName" label="代理名称" min-width="220" align="center" show-overflow-tooltip />
+      <el-table :data="list" stripe border v-loading="loading" @selection-change="handleSelectionChange">
+        <el-table-column type="selection" width="45" align="center" />
+        <el-table-column prop="proxyName" label="隧道名称" min-width="220" align="center" show-overflow-tooltip />
         <el-table-column label="所属服务" min-width="200" align="center" show-overflow-tooltip>
           <template #default="{ row }">
             {{ row.serviceName || '-' }}
@@ -62,7 +69,7 @@
           </template>
         </el-table-column>
         <el-table-column prop="remark" label="备注" min-width="140" show-overflow-tooltip align="center" />
-        <el-table-column label="操作" width="240" fixed="right" align="center">
+        <el-table-column label="操作" width="280" fixed="right" align="center">
           <template #default="{ row }">
             <el-button type="info" link size="small" @click="viewDetail(row)">查看</el-button>
             <el-button type="success" link size="small" @click="copyAddress(row)">复制地址</el-button>
@@ -103,7 +110,7 @@
             <el-option v-for="s in egressServiceOptions" :key="s.id" :label="s.name + '-' + s.machineName" :value="s.id" />
           </el-select>
         </el-form-item>
-        <el-form-item label="代理/隧道名称">
+        <el-form-item label="隧道名称">
           <el-input v-model="form.proxyName" readonly />
         </el-form-item>
         <el-form-item label="公网IP" prop="publicIp">
@@ -140,7 +147,7 @@
     <el-dialog v-model="detailVisible" title="出站方式详情" width="520px" :close-on-click-modal="false" :lock-scroll="false">
       <template v-if="detailData">
         <el-descriptions :column="1" border>
-          <el-descriptions-item label="代理名称">{{ detailData.proxyName || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="隧道名称">{{ detailData.proxyName || '-' }}</el-descriptions-item>
           <el-descriptions-item label="所属服务">{{ detailData.serviceName || '-' }}</el-descriptions-item>
           <el-descriptions-item label="出站服务">
             <template v-if="detailData.isDirect">本机直连</template>
@@ -189,12 +196,32 @@
         <el-button @click="firewallVisible = false">关闭</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="healthVisible" title="健康检查结果" width="700px" :lock-scroll="false">
+      <el-table :data="healthResults" stripe border>
+        <el-table-column prop="proxyName" label="隧道名称" min-width="180" show-overflow-tooltip />
+        <el-table-column prop="serviceName" label="服务名" min-width="160" show-overflow-tooltip />
+        <el-table-column label="状态" width="100" align="center">
+          <template #default="{ row }">
+            <el-tag :type="row.reachable ? 'success' : 'danger'" size="small">
+              {{ row.reachable ? '可达' : '不可达' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="延迟" width="100" align="center">
+          <template #default="{ row }">{{ row.reachable ? row.latency + 'ms' : '-' }}</template>
+        </el-table-column>
+      </el-table>
+      <template #footer>
+        <el-button @click="healthVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { reactive, ref, computed, onMounted } from 'vue'
-import { getEgressMethods, createEgressMethod, updateEgressMethod, deleteEgressMethod, syncFirewall } from '../api/egress'
+import { getEgressMethods, createEgressMethod, updateEgressMethod, deleteEgressMethod, syncFirewall, batchUpdateStatus, batchDeleteEgress, healthCheck } from '../api/egress'
 import { getServices } from '../api/service'
 import { getOtherServices } from '../api/otherService'
 import { getMachines } from '../api/machine'
@@ -223,6 +250,10 @@ const detailData = ref(null)
 const syncing = ref(false)
 const firewallVisible = ref(false)
 const firewallResults = ref([])
+const selectedIds = ref([])
+const healthChecking = ref(false)
+const healthVisible = ref(false)
+const healthResults = ref([])
 
 const form = reactive({
   serviceId: '', serviceType: 'docker', isDirect: true, egressServiceId: '', proxyName: '',
@@ -477,6 +508,37 @@ const fallbackCopy = (text) => {
   document.body.removeChild(textarea)
 }
 
+const handleSelectionChange = (rows) => {
+  selectedIds.value = rows.map(r => r.id)
+}
+
+const handleBatchStatus = async (status) => {
+  const action = status === 1 ? '启用' : '停用'
+  try {
+    await ElMessageBox.confirm(`确定批量${action} ${selectedIds.value.length} 条出站方式吗？`, `批量${action}`, {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    await batchUpdateStatus(selectedIds.value, status)
+    ElMessage.success(`批量${action}成功`)
+    fetchData()
+  } catch {}
+}
+
+const handleBatchDelete = async () => {
+  try {
+    await ElMessageBox.confirm(`确定批量删除 ${selectedIds.value.length} 条出站方式吗？此操作不可恢复！`, '批量删除', {
+      confirmButtonText: '确定删除',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    await batchDeleteEgress(selectedIds.value)
+    ElMessage.success('批量删除成功')
+    fetchData()
+  } catch {}
+}
+
 const handleSyncFirewall = async () => {
   syncing.value = true
   try {
@@ -495,6 +557,21 @@ const handleSyncFirewall = async () => {
     ElMessage.error('防火墙同步失败')
   } finally {
     syncing.value = false
+  }
+}
+
+const handleHealthCheck = async () => {
+  healthChecking.value = true
+  try {
+    const res = await healthCheck()
+    healthResults.value = res.data || []
+    healthVisible.value = true
+    const reachable = healthResults.value.filter(r => r.reachable).length
+    ElMessage.info(`检查完成：${reachable}/${healthResults.value.length} 个服务可达`)
+  } catch {
+    ElMessage.error('健康检查失败')
+  } finally {
+    healthChecking.value = false
   }
 }
 
