@@ -34,8 +34,8 @@ RUN go mod download
 # 复制后端源码并构建
 COPY server/ ./
 
-# 构建可执行文件（添加版本信息）
-RUN go build -ldflags="-s -w -X main.Version=$(git describe --tags --always 2>/dev/null || echo 'dev')" -o server .
+# 构建可执行文件
+RUN go build -ldflags="-s -w" -o server .
 
 # 第三阶段：最终运行镜像
 FROM debian:bookworm-slim
@@ -57,9 +57,11 @@ RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 
 WORKDIR /app
 
-# 从后端构建阶段复制可执行文件和配置
+# 从后端构建阶段复制可执行文件
 COPY --from=backend /app/server/server .
-COPY --from=backend /app/server/config.yaml ./config.yaml 2>/dev/null || echo "config.yaml not found, using default"
+
+# 复制配置文件（如果存在）
+COPY --from=backend /app/server/config.yaml ./config.yaml
 
 # 从前端构建阶段复制静态文件
 COPY --from=frontend /app/web/dist ./dist
