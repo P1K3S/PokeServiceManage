@@ -14,9 +14,9 @@
       </template>
 
       <el-form :inline="true" :model="search" style="margin-bottom: 10px">
-        <el-form-item label="所属服务">
-          <el-select v-model="search.serviceId" placeholder="全部" clearable @change="fetchData" style="width: 160px" filterable>
-            <el-option v-for="s in allServiceOptions" :key="s.value" :label="s.label" :value="s.value" />
+        <el-form-item label="所属主机">
+          <el-select v-model="search.machineId" placeholder="全部" clearable @change="fetchData" style="width: 160px" filterable>
+            <el-option v-for="m in machineOptions" :key="m.id" :label="m.name" :value="m.id" />
           </el-select>
         </el-form-item>
         <el-form-item label="出站服务">
@@ -200,6 +200,7 @@ import { reactive, ref, onMounted } from 'vue'
 import { getEgressMethods, createEgressMethod, updateEgressMethod, deleteEgressMethod, syncFirewall } from '../api/egress'
 import { getServices } from '../api/service'
 import { getOtherServices } from '../api/otherService'
+import { getMachines } from '../api/machine'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Monitor } from '@element-plus/icons-vue'
 
@@ -211,8 +212,8 @@ const loading = ref(false)
 const dockerServiceOptions = ref([])
 const otherServiceOptions = ref([])
 const egressServiceOptions = ref([])
-const allServiceOptions = ref([])
-const search = reactive({ serviceId: '', egressType: '', status: '' })
+const machineOptions = ref([])
+const search = reactive({ machineId: '', egressType: '', status: '' })
 const formVisible = ref(false)
 const formMode = ref('create')
 const formRef = ref(null)
@@ -245,7 +246,7 @@ const fetchData = async () => {
   loading.value = true
   try {
     const params = { page: page.value, pageSize: pageSize.value }
-    if (search.serviceId) params.serviceId = search.serviceId
+    if (search.machineId) params.machineId = search.machineId
     if (search.egressType === 'direct') params.isDirect = true
     else if (search.egressType === 'egress') params.isDirect = false
     if (search.status !== '') params.status = search.status
@@ -260,22 +261,15 @@ const fetchData = async () => {
 
 const fetchServices = async () => {
   try {
-    const [dockerRes, otherRes] = await Promise.all([
+    const [dockerRes, otherRes, machinesRes] = await Promise.all([
       getServices({ page: 1, pageSize: 200 }),
-      getOtherServices({ page: 1, pageSize: 200 })
+      getOtherServices({ page: 1, pageSize: 200 }),
+      getMachines({ page: 1, pageSize: 200 })
     ])
     dockerServiceOptions.value = dockerRes.data.list
     otherServiceOptions.value = otherRes.data.list
     egressServiceOptions.value = dockerRes.data.list.filter(s => s.isEgress)
-
-    const options = []
-    for (const s of dockerRes.data.list) {
-      options.push({ value: 'docker-' + s.id, label: s.name + '-' + (s.machineName || '') })
-    }
-    for (const s of otherRes.data.list) {
-      options.push({ value: 'other-' + s.id, label: s.name + '-' + (s.machineName || '') })
-    }
-    allServiceOptions.value = options
+    machineOptions.value = machinesRes.data.list
   } catch {}
 }
 

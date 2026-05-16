@@ -27,6 +27,7 @@ func (h *EgressMethodHandler) List(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "10"))
 	serviceIDStr := c.Query("serviceId")
+	machineIDStr := c.Query("machineId")
 	isDirectStr := c.Query("isDirect")
 	statusStr := c.Query("status")
 
@@ -35,6 +36,23 @@ func (h *EgressMethodHandler) List(c *gin.Context) {
 	if serviceIDStr != "" {
 		serviceID, _ := strconv.Atoi(serviceIDStr)
 		query = query.Where("service_id = ?", serviceID)
+	}
+	if machineIDStr != "" {
+		machineID, _ := strconv.Atoi(machineIDStr)
+		var dockerServiceIDs []uint
+		h.DB.Model(&model.DockerService{}).Where("machine_id = ?", machineID).Pluck("id", &dockerServiceIDs)
+		var otherServiceIDs []uint
+		h.DB.Model(&model.OtherService{}).Where("machine_id = ?", machineID).Pluck("id", &otherServiceIDs)
+
+		if len(dockerServiceIDs) == 0 && len(otherServiceIDs) == 0 {
+			query = query.Where("1 = 0")
+		} else {
+			conditions := h.DB.Where("(service_type = 'docker' AND service_id IN ?)", dockerServiceIDs)
+			if len(otherServiceIDs) > 0 {
+				conditions = conditions.Or("(service_type = 'other' AND service_id IN ?)", otherServiceIDs)
+			}
+			query = query.Where(conditions)
+		}
 	}
 	if isDirectStr == "true" {
 		query = query.Where("is_direct = ?", true)
