@@ -8,7 +8,7 @@ RUN npm config set registry https://registry.npmmirror.com
 
 # 复制前端依赖文件
 COPY web/package*.json ./
-RUN npm ci --only=production || npm install
+RUN npm ci || npm install
 
 # 复制前端源码并构建
 COPY web/ ./
