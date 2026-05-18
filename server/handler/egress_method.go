@@ -36,7 +36,7 @@ func (h *EgressMethodHandler) List(c *gin.Context) {
 	egressServiceIDStr := c.Query("egressServiceId")
 	statusStr := c.Query("status")
 
-	query := userScope(c, h.DB).Model(&model.EgressMethod{})
+	query := egressScope(c, h.DB).Model(&model.EgressMethod{})
 
 	if serviceIDStr != "" {
 		serviceID, _ := strconv.Atoi(serviceIDStr)
@@ -269,7 +269,7 @@ func (h *EgressMethodHandler) Create(c *gin.Context) {
 func (h *EgressMethodHandler) Update(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	var method model.EgressMethod
-	if err := userScope(c, h.DB).First(&method, id).Error; err != nil {
+	if err := egressScope(c, h.DB).First(&method, id).Error; err != nil {
 		jsonError(c, "出站方式不存在")
 		return
 	}
@@ -326,7 +326,7 @@ func (h *EgressMethodHandler) Update(c *gin.Context) {
 func (h *EgressMethodHandler) Delete(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	var method model.EgressMethod
-	if err := userScope(c, h.DB).First(&method, id).Error; err != nil {
+	if err := egressScope(c, h.DB).First(&method, id).Error; err != nil {
 		jsonError(c, "出站方式不存在")
 		return
 	}
@@ -355,7 +355,7 @@ func (h *EgressMethodHandler) BatchUpdateStatus(c *gin.Context) {
 		jsonError(c, "状态值无效")
 		return
 	}
-	if err := userScope(c, h.DB).Model(&model.EgressMethod{}).Where("id IN ?", req.IDs).Update("status", req.Status).Error; err != nil {
+	if err := egressScope(c, h.DB).Model(&model.EgressMethod{}).Where("id IN ?", req.IDs).Update("status", req.Status).Error; err != nil {
 		jsonError(c, "批量更新状态失败")
 		return
 	}
@@ -370,7 +370,7 @@ func (h *EgressMethodHandler) BatchDelete(c *gin.Context) {
 		jsonError(c, "请选择至少一个出站方式")
 		return
 	}
-	if err := userScope(c, h.DB).Where("id IN ?", req.IDs).Delete(&model.EgressMethod{}).Error; err != nil {
+	if err := egressScope(c, h.DB).Where("id IN ?", req.IDs).Delete(&model.EgressMethod{}).Error; err != nil {
 		jsonError(c, "批量删除失败")
 		return
 	}
@@ -449,7 +449,7 @@ func (h *EgressMethodHandler) resolveMachineID(m model.EgressMethod) uint {
 
 func (h *EgressMethodHandler) SyncFirewall(c *gin.Context) {
 	var methods []model.EgressMethod
-	if err := userScope(c, h.DB).Find(&methods).Error; err != nil {
+	if err := egressScope(c, h.DB).Find(&methods).Error; err != nil {
 		jsonError(c, "查询出站方式失败")
 		return
 	}
@@ -728,7 +728,7 @@ func (h *EgressMethodHandler) GenerateFrpc(c *gin.Context) {
 	}
 
 	var methods []model.EgressMethod
-	if err := userScope(c, h.DB).Where("id IN ?", req.IDs).Find(&methods).Error; err != nil || len(methods) == 0 {
+	if err := egressScope(c, h.DB).Where("id IN ?", req.IDs).Find(&methods).Error; err != nil || len(methods) == 0 {
 		jsonError(c, "出站方式不存在")
 		return
 	}
@@ -822,7 +822,7 @@ func (h *EgressMethodHandler) GenerateFrpc(c *gin.Context) {
 
 func (h *EgressMethodHandler) HealthCheck(c *gin.Context) {
 	var methods []model.EgressMethod
-	userScope(c, h.DB).Where("status = ?", 1).Find(&methods)
+	egressScope(c, h.DB).Where("status = ?", 1).Find(&methods)
 
 	type CheckResult struct {
 		ID          uint   `json:"id"`

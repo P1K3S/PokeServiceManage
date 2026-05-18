@@ -192,8 +192,17 @@ func (h *NoticeHandler) MoveNotice(c *gin.Context) {
 		swapIdx = idx + 1
 	}
 
-	h.DB.Model(&model.Notice{}).Where("id = ?", allNotices[idx].ID).Update("sort_order", allNotices[swapIdx].SortOrder)
-	h.DB.Model(&model.Notice{}).Where("id = ?", allNotices[swapIdx].ID).Update("sort_order", allNotices[idx].SortOrder)
+	for i, n := range allNotices {
+		newOrder := len(allNotices) - i
+		if i == idx {
+			newOrder = len(allNotices) - swapIdx
+		} else if i == swapIdx {
+			newOrder = len(allNotices) - idx
+		}
+		if n.SortOrder != newOrder {
+			h.DB.Model(&model.Notice{}).Where("id = ?", n.ID).Update("sort_order", newOrder)
+		}
+	}
 
 	c.JSON(http.StatusOK, gin.H{"code": 200, "message": "移动成功"})
 }

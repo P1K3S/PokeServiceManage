@@ -110,7 +110,7 @@ func (h *DockerServiceHandler) Create(c *gin.Context) {
 func (h *DockerServiceHandler) Update(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	var service model.DockerService
-	if err := userScope(c, h.DB).First(&service, id).Error; err != nil {
+	if err := serviceScope(c, h.DB).First(&service, id).Error; err != nil {
 		jsonError(c, "服务不存在")
 		return
 	}
@@ -160,7 +160,7 @@ func (h *DockerServiceHandler) Update(c *gin.Context) {
 func (h *DockerServiceHandler) Delete(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	var service model.DockerService
-	if err := userScope(c, h.DB).First(&service, id).Error; err != nil {
+	if err := serviceScope(c, h.DB).First(&service, id).Error; err != nil {
 		jsonError(c, "服务不存在")
 		return
 	}
@@ -190,12 +190,12 @@ func (h *DockerServiceHandler) Delete(c *gin.Context) {
 func (h *DockerServiceHandler) Check(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	var service model.DockerService
-	if err := userScope(c, h.DB).First(&service, id).Error; err != nil {
+	if err := serviceScope(c, h.DB).First(&service, id).Error; err != nil {
 		jsonError(c, "服务不存在")
 		return
 	}
 	var machine model.Machine
-	if err := h.DB.First(&machine, service.MachineID).Error; err != nil {
+	if err := h.DB.Unscoped().First(&machine, service.MachineID).Error; err != nil {
 		jsonError(c, "所属主机不存在")
 		return
 	}

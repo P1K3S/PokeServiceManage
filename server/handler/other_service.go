@@ -106,7 +106,7 @@ func (h *OtherServiceHandler) Create(c *gin.Context) {
 func (h *OtherServiceHandler) Update(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	var service model.OtherService
-	if err := userScope(c, h.DB).First(&service, id).Error; err != nil {
+	if err := serviceScope(c, h.DB).First(&service, id).Error; err != nil {
 		jsonError(c, "其他服务不存在")
 		return
 	}
@@ -150,7 +150,7 @@ func (h *OtherServiceHandler) Update(c *gin.Context) {
 func (h *OtherServiceHandler) Delete(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	var service model.OtherService
-	if err := userScope(c, h.DB).First(&service, id).Error; err != nil {
+	if err := serviceScope(c, h.DB).First(&service, id).Error; err != nil {
 		jsonError(c, "其他服务不存在")
 		return
 	}

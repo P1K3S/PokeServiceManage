@@ -273,12 +273,12 @@ func (h *MachineHandler) Overview(c *gin.Context) {
 	userScope(c, h.DB).Model(&model.Machine{}).Count(&machineTotal)
 	userScope(c, h.DB).Model(&model.Machine{}).Where("status = 1").Count(&machineOnline)
 	var dockerTotal, otherTotal int64
-	userScope(c, h.DB).Model(&model.DockerService{}).Count(&dockerTotal)
-	userScope(c, h.DB).Model(&model.OtherService{}).Count(&otherTotal)
+	serviceScope(c, h.DB).Model(&model.DockerService{}).Count(&dockerTotal)
+	serviceScope(c, h.DB).Model(&model.OtherService{}).Count(&otherTotal)
 	serviceTotal = dockerTotal + otherTotal
 	var dockerRunning, otherRunning int64
-	userScope(c, h.DB).Model(&model.DockerService{}).Where("status = 1").Count(&dockerRunning)
-	userScope(c, h.DB).Model(&model.OtherService{}).Where("status = 1").Count(&otherRunning)
+	serviceScope(c, h.DB).Model(&model.DockerService{}).Where("status = 1").Count(&dockerRunning)
+	serviceScope(c, h.DB).Model(&model.OtherService{}).Where("status = 1").Count(&otherRunning)
 	serviceRunning = dockerRunning + otherRunning
 
 	var recentLogs []model.OperationLog

@@ -249,7 +249,7 @@ const connect = async () => {
   connectionId++
   const currentConnId = connectionId
 
-  if (term) term.clear()
+  if (term) term.reset()
 
   const token = localStorage.getItem('token')
   if (!token) {
@@ -315,7 +315,7 @@ const disconnect = () => {
 
 const handleMachineChange = () => {
   closeWs()
-  if (term) term.clear()
+  if (term) term.reset()
   currentPath.value = '/'
   files.value = []
   selectedFile.value = null

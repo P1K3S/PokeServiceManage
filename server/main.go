@@ -127,19 +127,38 @@ func backfillExistingData(db *gorm.DB) {
 }
 
 func seedNotice(db *gorm.DB) {
-	var count int64
-	db.Model(&model.Notice{}).Where("status = 1").Count(&count)
-	if count > 0 {
-		return
+	type seedItem struct {
+		Title   string
+		Content string
+		Pinned  bool
 	}
-	db.Create(&model.Notice{
-		Title:   "系统更新通知",
-		Content: "## 【2026-05-18 更新】\n\n1. **通知公告升级**：支持 Markdown 语法渲染，支持新增、编辑、删除多条通知\n2. **SSH 终端优化**：切换侧边栏不再断开连接，终端状态完整保留\n3. **仪表盘统计修复**：\"运行中Docker服务\"现在只统计 Docker 服务，不再混入其他服务\n4. **导出安全加固**：SSH 密码导出时自动脱敏为 `******`，非管理员只能导出自己创建的数据\n5. **浏览器图标更新**：标签页图标更换为全新仪表盘图标",
-		Status:  1,
-	})
-	db.Create(&model.Notice{
-		Title:   "历史更新记录",
-		Content: "## 【2026-05-17 更新】\n\n1. 所有配置抽象到 `config.yaml`，项目开箱即用\n2. FRP 配置全自动发现：选了出站服务后自动 inspect 容器、读取配置、解析端口和 token\n3. SSH 终端上线，浏览器直连主机\n4. 健康检查改为公网探测 + 并发超时\n5. 仪表盘通知公告替代最近操作，支持在线编辑\n6. Docker 服务连通检测改为并发执行\n7. 代理名称统一更名为隧道名称",
-		Status:  1,
-	})
+	seeds := []seedItem{
+		{
+			Title:   "系统更新通知",
+			Content: "## 【2026-05-18 更新】\n\n1. **通知排序与置顶**：通知公告支持上下移动排序和置顶功能，重要通知永远在最前面\n2. **SSH 终端修复**：切换主机连接不再乱套，旧连接彻底隔离，终端画面完全重置\n3. **公开服务权限修复**：普通用户检测、编辑、删除公开服务不再报\"服务不存在\"，出站方式同理\n4. **仪表盘统计修复**：普通用户也能看到公开服务的统计数据\n\n---\n\n## 【2026-05-17 更新】\n\n1. **通知公告升级**：支持 Markdown 语法渲染，支持新增、编辑、删除多条通知\n2. **SSH 终端优化**：切换侧边栏不再断开连接，终端状态完整保留\n3. **仪表盘统计修复**：\"运行中Docker服务\"现在只统计 Docker 服务，不再混入其他服务\n4. **导出安全加固**：SSH 密码导出时自动脱敏为 `******`，非管理员只能导出自己创建的数据\n5. **浏览器图标更新**：标签页图标更换为全新仪表盘图标",
+			Pinned:  true,
+		},
+		{
+			Title:   "历史更新记录",
+			Content: "## 【2026-05-16 更新】\n\n1. **配置抽象**：所有配置抽象到 `config.yaml`，项目开箱即用\n2. **FRP 自动发现**：选了出站服务后自动 inspect 容器、读取配置、解析端口和 token\n3. **SSH 终端上线**：浏览器直连主机，无需额外客户端\n4. **健康检查优化**：改为公网探测 + 并发超时\n5. **通知公告**：仪表盘通知公告替代最近操作，支持在线编辑\n6. **连通检测并发**：Docker 服务连通检测改为并发执行\n7. **命名统一**：代理名称统一更名为隧道名称",
+			Pinned:  false,
+		},
+	}
+	for _, s := range seeds {
+		var notice model.Notice
+		if err := db.Where("title = ?", s.Title).First(&notice).Error; err != nil {
+			db.Create(&model.Notice{
+				Title:     s.Title,
+				Content:   s.Content,
+				Status:    1,
+				Pinned:    s.Pinned,
+				SortOrder: 0,
+			})
+		} else {
+			db.Model(&notice).Updates(map[string]interface{}{
+				"content": s.Content,
+				"pinned":  s.Pinned,
+			})
+		}
+	}
 }
