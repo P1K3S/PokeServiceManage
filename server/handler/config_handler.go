@@ -34,8 +34,8 @@ func (h *ConfigHandler) Export(c *gin.Context) {
 		h.DB.Find(&data.EgressMethods)
 	} else {
 		h.DB.Where("user_id = ?", uid).Find(&data.Machines)
-		h.DB.Where("user_id = ? OR is_public = 1", uid).Find(&data.DockerServices)
-		h.DB.Where("user_id = ? OR is_public = 1", uid).Find(&data.OtherServices)
+		h.DB.Where("user_id = ?", uid).Find(&data.DockerServices)
+		h.DB.Where("user_id = ?", uid).Find(&data.OtherServices)
 		h.DB.Where("user_id = ?", uid).Find(&data.EgressMethods)
 	}
 
