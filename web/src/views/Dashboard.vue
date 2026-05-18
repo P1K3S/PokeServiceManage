@@ -28,10 +28,27 @@
         </div>
       </template>
       <div v-if="notices.length > 0" class="notice-list">
-        <div v-for="item in notices" :key="item.id" class="notice-item">
+        <div
+          v-for="(item, index) in notices"
+          :key="item.id"
+          class="notice-item"
+          :class="{ 'notice-pinned': item.pinned }"
+        >
           <div class="notice-item-header">
-            <span class="notice-item-title">{{ item.title }}</span>
+            <div class="notice-item-left">
+              <el-tag v-if="item.pinned" type="danger" size="small" effect="dark" class="pin-tag">置顶</el-tag>
+              <span class="notice-item-title">{{ item.title }}</span>
+            </div>
             <div class="notice-item-actions" v-if="authStore.isAdmin">
+              <el-button type="warning" link size="small" @click="handleTogglePin(item)">
+                {{ item.pinned ? '取消置顶' : '置顶' }}
+              </el-button>
+              <el-button :disabled="index === 0" link size="small" @click="handleMove(item, 'up')">
+                <el-icon><ArrowUp /></el-icon>
+              </el-button>
+              <el-button :disabled="index === notices.length - 1" link size="small" @click="handleMove(item, 'down')">
+                <el-icon><ArrowDown /></el-icon>
+              </el-button>
               <el-button type="primary" link size="small" @click="openEditNotice(item)">编辑</el-button>
               <el-button type="danger" link size="small" @click="handleDeleteNotice(item)">删除</el-button>
             </div>
@@ -66,9 +83,10 @@
 import { reactive, onMounted, computed, h, ref } from 'vue'
 import { getOverview } from '../api/machine'
 import { exportConfig, importConfig } from '../api/config'
-import { getNotices, createNotice, updateNotice, deleteNotice } from '../api/notice'
+import { getNotices, createNotice, updateNotice, deleteNotice, togglePinNotice, moveNotice } from '../api/notice'
 import { useAuthStore } from '../stores/auth'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { ArrowUp, ArrowDown } from '@element-plus/icons-vue'
 import { marked } from 'marked'
 
 const authStore = useAuthStore()
@@ -156,6 +174,25 @@ const handleDeleteNotice = async (item) => {
     ElMessage.success('已删除')
     fetchNotices()
   } catch {
+  }
+}
+
+const handleTogglePin = async (item) => {
+  try {
+    await togglePinNotice(item.id)
+    ElMessage.success(item.pinned ? '已取消置顶' : '已置顶')
+    fetchNotices()
+  } catch {
+    ElMessage.error('操作失败')
+  }
+}
+
+const handleMove = async (item, direction) => {
+  try {
+    await moveNotice(item.id, direction)
+    fetchNotices()
+  } catch {
+    ElMessage.error('移动失败')
   }
 }
 
@@ -323,6 +360,12 @@ const handleImport = async (e) => {
   border-radius: 8px;
   padding: 16px;
   background: #fafafa;
+  transition: border-color 0.2s;
+}
+
+.notice-pinned {
+  border-color: #f56c6c;
+  background: #fff8f8;
 }
 
 .notice-item-header {
@@ -332,15 +375,31 @@ const handleImport = async (e) => {
   margin-bottom: 8px;
 }
 
+.notice-item-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.pin-tag {
+  flex-shrink: 0;
+}
+
 .notice-item-title {
   font-weight: 600;
   font-size: 15px;
   color: #303133;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .notice-item-actions {
   display: flex;
-  gap: 4px;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
 }
 
 .notice-content {

@@ -98,6 +98,8 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 			notices.POST("", noticeHandler.CreateNotice)
 			notices.PUT("/:id", noticeHandler.UpdateNotice)
 			notices.DELETE("/:id", noticeHandler.DeleteNotice)
+			notices.PUT("/:id/pin", noticeHandler.TogglePin)
+			notices.PUT("/:id/move/:direction", noticeHandler.MoveNotice)
 		}
 
 		logHandler := handler.NewOperationLogHandler(db)

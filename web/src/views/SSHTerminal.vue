@@ -125,6 +125,7 @@ const showFileManager = ref(false)
 let term = null
 let fitAddon = null
 let ws = null
+let connectionId = 0
 
 const fileLoading = ref(false)
 const currentPath = ref('/')
@@ -171,6 +172,10 @@ const fetchMachines = async () => {
 }
 
 const initTerminal = () => {
+  if (term) {
+    term.dispose()
+    term = null
+  }
   term = new Terminal({
     cursorBlink: true,
     fontSize: 14,
@@ -222,13 +227,29 @@ const handleResize = () => {
   if (fitAddon) fitAddon.fit()
 }
 
+const closeWs = () => {
+  if (ws) {
+    ws.onopen = null
+    ws.onmessage = null
+    ws.onclose = null
+    ws.onerror = null
+    if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+      ws.close()
+    }
+    ws = null
+  }
+  connected.value = false
+}
+
 const connect = async () => {
   if (!selectedMachineId.value) return
 
-  if (ws) {
-    ws.close()
-    ws = null
-  }
+  closeWs()
+
+  connectionId++
+  const currentConnId = connectionId
+
+  if (term) term.clear()
 
   const token = localStorage.getItem('token')
   if (!token) {
@@ -253,11 +274,13 @@ const connect = async () => {
   ws.binaryType = 'arraybuffer'
 
   ws.onopen = () => {
+    if (currentConnId !== connectionId) return
     connected.value = true
     term.writeln('\x1b[32m已连接\x1b[0m\r\n')
   }
 
   ws.onmessage = (event) => {
+    if (currentConnId !== connectionId) return
     if (event.data instanceof ArrayBuffer) {
       term.write(new Uint8Array(event.data))
     } else {
@@ -266,6 +289,7 @@ const connect = async () => {
   }
 
   ws.onclose = (event) => {
+    if (currentConnId !== connectionId) return
     connected.value = false
     if (event.code === 1006) {
       term.writeln('\r\n\x1b[31m连接异常断开（可能是认证失败或服务端未启动）\x1b[0m')
@@ -275,6 +299,7 @@ const connect = async () => {
   }
 
   ws.onerror = () => {
+    if (currentConnId !== connectionId) return
     connected.value = false
     term.writeln('\r\n\x1b[31m连接出错\x1b[0m')
     ElMessage.error('WebSocket连接失败，请检查后端服务是否启动')
@@ -282,15 +307,14 @@ const connect = async () => {
 }
 
 const disconnect = () => {
-  if (ws) {
-    ws.close()
-    ws = null
+  closeWs()
+  if (term) {
+    term.writeln('\r\n\x1b[33m已断开连接\x1b[0m')
   }
-  connected.value = false
 }
 
 const handleMachineChange = () => {
-  if (connected.value) disconnect()
+  closeWs()
   if (term) term.clear()
   currentPath.value = '/'
   files.value = []
@@ -530,7 +554,7 @@ onActivated(() => {
 })
 
 onBeforeUnmount(() => {
-  disconnect()
+  closeWs()
   if (term) {
     term.dispose()
     term = null
