@@ -54,18 +54,3 @@ func serviceScope(c *gin.Context, db *gorm.DB) *gorm.DB {
 	}
 	return db.Where("user_id = ? OR is_public = 1", userId)
 }
-
-func egressScope(c *gin.Context, db *gorm.DB) *gorm.DB {
-	if isAdmin(c) {
-		return db
-	}
-	userId := getUserId(c)
-	if userId == 0 {
-		return db.Where("user_id = ?", 0)
-	}
-	return db.Where("user_id = ? OR service_id IN (?) OR service_id IN (?)",
-		userId,
-		db.Table("docker_services").Select("id").Where("is_public = 1"),
-		db.Table("other_services").Select("id").Where("is_public = 1"),
-	)
-}
