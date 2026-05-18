@@ -288,6 +288,8 @@ func (h *MachineHandler) Overview(c *gin.Context) {
 		"machineTotal":   machineTotal,
 		"serviceTotal":   serviceTotal,
 		"machineOnline":  machineOnline,
+		"dockerRunning":  dockerRunning,
+		"otherRunning":   otherRunning,
 		"serviceRunning": serviceRunning,
 		"recentLogs":     recentLogs,
 	})

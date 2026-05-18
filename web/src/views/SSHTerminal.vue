@@ -106,13 +106,15 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, onActivated, nextTick } from 'vue'
 import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import '@xterm/xterm/css/xterm.css'
 import { getMachines } from '../api/machine'
 import { sftpList, sftpDownload, sftpDownloadDir, sftpUpload, sftpMkdir, sftpRemove, sftpRename, sftpReadFile, sftpWriteFile } from '../api/sftp'
 import { ElMessage, ElMessageBox } from 'element-plus'
+
+defineOptions({ name: 'SSHTerminal' })
 
 const machines = ref([])
 const selectedMachineId = ref('')
@@ -517,6 +519,14 @@ onMounted(async () => {
   await nextTick()
   initTerminal()
   fetchMachines()
+})
+
+onActivated(() => {
+  nextTick(() => {
+    if (fitAddon && term) {
+      fitAddon.fit()
+    }
+  })
 })
 
 onBeforeUnmount(() => {

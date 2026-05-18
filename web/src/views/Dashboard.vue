@@ -23,21 +23,35 @@
     <el-card shadow="never" class="notice-card">
       <template #header>
         <div class="notice-header">
-          <span>{{ notice.title || '通知公告' }}</span>
-          <el-button v-if="authStore.isAdmin" type="primary" link size="small" @click="showEditNotice = true">编辑</el-button>
+          <span>通知公告</span>
+          <el-button v-if="authStore.isAdmin" type="primary" link size="small" @click="openAddNotice">新增通知</el-button>
         </div>
       </template>
-      <div v-if="notice.content" class="notice-content" v-html="formatNotice(notice.content)"></div>
+      <div v-if="notices.length > 0" class="notice-list">
+        <div v-for="item in notices" :key="item.id" class="notice-item">
+          <div class="notice-item-header">
+            <span class="notice-item-title">{{ item.title }}</span>
+            <div class="notice-item-actions" v-if="authStore.isAdmin">
+              <el-button type="primary" link size="small" @click="openEditNotice(item)">编辑</el-button>
+              <el-button type="danger" link size="small" @click="handleDeleteNotice(item)">删除</el-button>
+            </div>
+          </div>
+          <div class="notice-content markdown-body" v-html="renderMarkdown(item.content)"></div>
+        </div>
+      </div>
       <div v-else class="notice-empty">暂无通知</div>
     </el-card>
 
-    <el-dialog v-model="showEditNotice" title="编辑通知公告" width="500px">
+    <el-dialog v-model="showEditNotice" :title="editingNoticeId ? '编辑通知' : '新增通知'" width="600px">
       <el-form label-width="60px">
         <el-form-item label="标题">
           <el-input v-model="editTitle" placeholder="通知标题" />
         </el-form-item>
         <el-form-item label="内容">
-          <el-input v-model="editContent" type="textarea" :rows="10" placeholder="通知内容，支持换行" />
+          <el-input v-model="editContent" type="textarea" :rows="12" placeholder="通知内容，支持 Markdown 语法" />
+        </el-form-item>
+        <el-form-item label="预览">
+          <div class="notice-preview markdown-body" v-html="renderMarkdown(editContent)"></div>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -52,9 +66,10 @@
 import { reactive, onMounted, computed, h, ref } from 'vue'
 import { getOverview } from '../api/machine'
 import { exportConfig, importConfig } from '../api/config'
-import { getNotice, updateNotice } from '../api/notice'
+import { getNotices, createNotice, updateNotice, deleteNotice } from '../api/notice'
 import { useAuthStore } from '../stores/auth'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { marked } from 'marked'
 
 const authStore = useAuthStore()
 
@@ -62,15 +77,13 @@ const overview = reactive({
   machineTotal: 0,
   serviceTotal: 0,
   machineOnline: 0,
-  serviceRunning: 0
+  dockerRunning: 0,
+  otherRunning: 0
 })
 
-const notice = reactive({
-  title: '',
-  content: ''
-})
-
+const notices = ref([])
 const showEditNotice = ref(false)
+const editingNoticeId = ref(null)
 const editTitle = ref('')
 const editContent = ref('')
 const savingNotice = ref(false)
@@ -83,25 +96,48 @@ const fetchOverview = async () => {
   }
 }
 
-const fetchNotice = async () => {
+const fetchNotices = async () => {
   try {
-    const res = await getNotice()
-    if (res.data) {
-      notice.title = res.data.title || ''
-      notice.content = res.data.content || ''
-    }
+    const res = await getNotices()
+    notices.value = res.data || []
   } catch {
   }
 }
 
+const renderMarkdown = (content) => {
+  if (!content) return ''
+  return marked(content, { breaks: true })
+}
+
+const openAddNotice = () => {
+  editingNoticeId.value = null
+  editTitle.value = ''
+  editContent.value = ''
+  showEditNotice.value = true
+}
+
+const openEditNotice = (item) => {
+  editingNoticeId.value = item.id
+  editTitle.value = item.title
+  editContent.value = item.content
+  showEditNotice.value = true
+}
+
 const saveNotice = async () => {
+  if (!editTitle.value.trim()) {
+    ElMessage.warning('请输入标题')
+    return
+  }
   savingNotice.value = true
   try {
-    await updateNotice({ title: editTitle.value, content: editContent.value })
-    notice.title = editTitle.value
-    notice.content = editContent.value
+    if (editingNoticeId.value) {
+      await updateNotice(editingNoticeId.value, { title: editTitle.value, content: editContent.value })
+    } else {
+      await createNotice({ title: editTitle.value, content: editContent.value })
+    }
     showEditNotice.value = false
-    ElMessage.success('通知已更新')
+    ElMessage.success(editingNoticeId.value ? '通知已更新' : '通知已创建')
+    fetchNotices()
   } catch {
     ElMessage.error('保存失败')
   } finally {
@@ -109,17 +145,18 @@ const saveNotice = async () => {
   }
 }
 
-import { watch } from 'vue'
-watch(showEditNotice, (val) => {
-  if (val) {
-    editTitle.value = notice.title
-    editContent.value = notice.content
+const handleDeleteNotice = async (item) => {
+  try {
+    await ElMessageBox.confirm(`确定删除通知「${item.title}」吗？`, '删除确认', {
+      confirmButtonText: '删除',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    await deleteNotice(item.id)
+    ElMessage.success('已删除')
+    fetchNotices()
+  } catch {
   }
-})
-
-const formatNotice = (content) => {
-  if (!content) return ''
-  return content.replace(/\n/g, '<br/>')
 }
 
 const ServerIcon = () => h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.5', width: '28', height: '28' }, [
@@ -140,21 +177,24 @@ const CheckIcon = () => h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: '
   h('polyline', { points: '22 4 12 14.01 9 11.01' })
 ])
 
-const PlayIcon = () => h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.5', width: '28', height: '28' }, [
-  h('circle', { cx: '12', cy: '12', r: '10' }),
-  h('polygon', { points: '10 8 16 12 10 16 10 8', fill: 'currentColor', stroke: 'none' })
+const PlayIcon = () => h('svg', { viewBox: '0 0 1024 1024', width: '28', height: '28' }, [
+  h('path', { d: 'M512 937.353846c-234.732308 0-425.353846-190.621538-425.353846-425.353846 0-17.329231 14.178462-31.507692 31.507692-31.507692h236.307692c17.329231 0 31.507692 14.178462 31.507693 31.507692 0 69.316923 56.713846 126.030769 126.030769 126.030769s126.030769-56.713846 126.030769-126.030769c0-17.329231 14.178462-31.507692 31.507693-31.507692h236.307692c17.329231 0 31.507692 14.178462 31.507692 31.507692 0 234.732308-190.621538 425.353846-425.353846 425.353846zM151.236923 543.507692c15.753846 185.107692 171.716923 330.830769 360.763077 330.83077s345.009231-145.723077 360.763077-330.83077H698.683077C683.716923 632.516923 605.735385 701.046154 512 701.046154s-171.716923-68.529231-186.683077-157.538462H151.236923z', fill: 'currentColor' }),
+  h('path', { d: 'M512 118.153846c-217.403077 0-393.846154 176.443077-393.846154 393.846154h236.307692c0-86.646154 70.892308-157.538462 157.538462-157.538462s157.538462 70.892308 157.538462 157.538462h236.307692c0-217.403077-176.443077-393.846154-393.846154-393.846154z', fill: '#d60909' }),
+  h('path', { d: 'M905.846154 543.507692H669.538462c-17.329231 0-31.507692-14.178462-31.507693-31.507692 0-69.316923-56.713846-126.030769-126.030769-126.030769s-126.030769 56.713846-126.030769 126.030769c0 17.329231-14.178462 31.507692-31.507693 31.507692H118.153846c-17.329231 0-31.507692-14.178462-31.507692-31.507692 0-234.732308 190.621538-425.353846 425.353846-425.353846s425.353846 190.621538 425.353846 425.353846c0 17.329231-14.178462 31.507692-31.507692 31.507692z m-207.163077-63.015384h174.867692C857.009231 295.384615 701.046154 149.661538 512 149.661538S166.990769 295.384615 151.236923 480.492308h174.867692C340.283077 391.483077 418.264615 322.953846 512 322.953846s171.716923 68.529231 186.683077 157.538462z', fill: 'currentColor' }),
+  h('path', { d: 'M512 701.046154c-103.975385 0-189.046154-85.070769-189.046154-189.046154s85.070769-189.046154 189.046154-189.046154 189.046154 85.070769 189.046154 189.046154-85.070769 189.046154-189.046154 189.046154z m0-315.076923c-69.316923 0-126.030769 56.713846-126.030769 126.030769s56.713846 126.030769 126.030769 126.030769 126.030769-56.713846 126.030769-126.030769-56.713846-126.030769-126.030769-126.030769z', fill: 'currentColor' }),
+  h('path', { d: 'M512 512m-78.769231 0a78.769231 78.769231 0 1 0 157.538462 0 78.769231 78.769231 0 1 0-157.538462 0Z', fill: 'currentColor' })
 ])
 
 const stats = computed(() => [
   { label: '主机总数', value: overview.machineTotal, color: '#5B8DEF', icon: ServerIcon },
   { label: '服务总数', value: overview.serviceTotal, color: '#6DA3C7', icon: BoxIcon },
   { label: '在线主机', value: overview.machineOnline, color: '#5FAE7A', icon: CheckIcon },
-  { label: '运行中Docker服务', value: overview.serviceRunning, color: '#E0A84C', icon: PlayIcon }
+  { label: '运行中Docker服务', value: overview.dockerRunning, color: '#E0A84C', icon: PlayIcon }
 ])
 
 onMounted(() => {
   fetchOverview()
-  fetchNotice()
+  fetchNotices()
 })
 
 const exporting = ref(false)
@@ -275,11 +315,51 @@ const handleImport = async (e) => {
   font-size: 16px;
 }
 
+.notice-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.notice-item {
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  padding: 16px;
+  background: #fafafa;
+}
+
+.notice-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.notice-item-title {
+  font-weight: 600;
+  font-size: 15px;
+  color: #303133;
+}
+
+.notice-item-actions {
+  display: flex;
+  gap: 4px;
+}
+
 .notice-content {
   font-size: 14px;
   line-height: 1.8;
   color: #3a3a3a;
-  white-space: pre-line;
+}
+
+.notice-preview {
+  border: 1px solid #ebeef5;
+  border-radius: 6px;
+  padding: 12px;
+  min-height: 80px;
+  background: #fafafa;
+  max-height: 300px;
+  overflow-y: auto;
 }
 
 .notice-empty {
@@ -288,4 +368,22 @@ const handleImport = async (e) => {
   padding: 20px 0;
   font-size: 14px;
 }
+
+.markdown-body :deep(h1) { font-size: 1.4em; margin: 0.6em 0 0.4em; font-weight: 700; }
+.markdown-body :deep(h2) { font-size: 1.2em; margin: 0.5em 0 0.3em; font-weight: 700; }
+.markdown-body :deep(h3) { font-size: 1.1em; margin: 0.4em 0 0.3em; font-weight: 600; }
+.markdown-body :deep(p) { margin: 0.4em 0; }
+.markdown-body :deep(ul), .markdown-body :deep(ol) { padding-left: 1.5em; margin: 0.4em 0; }
+.markdown-body :deep(li) { margin: 0.2em 0; }
+.markdown-body :deep(code) { background: #f0f0f0; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; }
+.markdown-body :deep(pre) { background: #f5f5f5; padding: 12px; border-radius: 6px; overflow-x: auto; }
+.markdown-body :deep(pre code) { background: none; padding: 0; }
+.markdown-body :deep(blockquote) { border-left: 4px solid #ddd; margin: 0.5em 0; padding: 0.3em 1em; color: #666; }
+.markdown-body :deep(a) { color: #409eff; text-decoration: none; }
+.markdown-body :deep(a:hover) { text-decoration: underline; }
+.markdown-body :deep(strong) { font-weight: 600; }
+.markdown-body :deep(hr) { border: none; border-top: 1px solid #eee; margin: 1em 0; }
+.markdown-body :deep(table) { border-collapse: collapse; width: 100%; margin: 0.5em 0; }
+.markdown-body :deep(th), .markdown-body :deep(td) { border: 1px solid #ddd; padding: 8px 12px; text-align: left; }
+.markdown-body :deep(th) { background: #f5f5f5; font-weight: 600; }
 </style>

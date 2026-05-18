@@ -24,16 +24,24 @@ type ExportData struct {
 
 func (h *ConfigHandler) Export(c *gin.Context) {
 	uid := getUserId(c)
-	scope := h.DB
-	if !isAdmin(c) {
-		scope = scope.Where("user_id = ?", uid)
-	}
 
 	var data ExportData
-	scope.Find(&data.Machines)
-	scope.Find(&data.DockerServices)
-	scope.Find(&data.OtherServices)
-	scope.Find(&data.EgressMethods)
+
+	if isAdmin(c) {
+		h.DB.Find(&data.Machines)
+		h.DB.Find(&data.DockerServices)
+		h.DB.Find(&data.OtherServices)
+		h.DB.Find(&data.EgressMethods)
+	} else {
+		h.DB.Where("user_id = ?", uid).Find(&data.Machines)
+		h.DB.Where("user_id = ? OR is_public = 1", uid).Find(&data.DockerServices)
+		h.DB.Where("user_id = ? OR is_public = 1", uid).Find(&data.OtherServices)
+		h.DB.Where("user_id = ?", uid).Find(&data.EgressMethods)
+	}
+
+	for i := range data.Machines {
+		data.Machines[i].SSHPassword = "******"
+	}
 
 	c.Header("Content-Disposition", "attachment; filename=service-config.json")
 	c.JSON(200, gin.H{"code": 0, "data": data})
@@ -56,6 +64,9 @@ func (h *ConfigHandler) Import(c *gin.Context) {
 	for i := range data.Machines {
 		data.Machines[i].ID = 0
 		data.Machines[i].UserID = getUserId(c)
+		if data.Machines[i].SSHPassword == "******" {
+			data.Machines[i].SSHPassword = ""
+		}
 		if err := tx.Create(&data.Machines[i]).Error; err != nil {
 			tx.Rollback()
 			jsonError(c, "导入主机失败: "+err.Error())

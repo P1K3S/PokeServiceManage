@@ -127,16 +127,14 @@ func backfillExistingData(db *gorm.DB) {
 }
 
 func seedNotice(db *gorm.DB) {
-	var notice model.Notice
-	if err := db.Where("title = ?", "系统更新通知").First(&notice).Error; err != nil {
-		db.Create(&model.Notice{
-			Title:   "系统更新通知",
-			Content: "【2026-05-17 更新】\n\n1. 所有配置抽象到 config.yaml，项目开箱即用\n2. FRP 配置全自动发现：选了出站服务后自动 inspect 容器、读取配置、解析端口和 token\n3. SSH 终端上线，浏览器直连主机\n4. 健康检查改为公网探测 + 并发超时\n5. 仪表盘通知公告替代最近操作，支持在线编辑\n6. Docker 服务连通检测改为并发执行\n7. 代理名称统一更名为隧道名称",
-			Status:  1,
-		})
-	} else {
-		db.Model(&notice).Updates(map[string]interface{}{
-			"content": "【2026-05-17 更新】\n\n1. 所有配置抽象到 config.yaml，项目开箱即用\n2. FRP 配置全自动发现：选了出站服务后自动 inspect 容器、读取配置、解析端口和 token\n3. SSH 终端上线，浏览器直连主机\n4. 健康检查改为公网探测 + 并发超时\n5. 仪表盘通知公告替代最近操作，支持在线编辑\n6. Docker 服务连通检测改为并发执行\n7. 代理名称统一更名为隧道名称",
-		})
+	var count int64
+	db.Model(&model.Notice{}).Where("status = 1").Count(&count)
+	if count > 0 {
+		return
 	}
+	db.Create(&model.Notice{
+		Title:   "系统更新通知",
+		Content: "【2026-05-17 更新】\n\n1. 所有配置抽象到 config.yaml，项目开箱即用\n2. FRP 配置全自动发现：选了出站服务后自动 inspect 容器、读取配置、解析端口和 token\n3. SSH 终端上线，浏览器直连主机\n4. 健康检查改为公网探测 + 并发超时\n5. 仪表盘通知公告替代最近操作，支持在线编辑\n6. Docker 服务连通检测改为并发执行\n7. 代理名称统一更名为隧道名称",
+		Status:  1,
+	})
 }

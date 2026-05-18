@@ -94,8 +94,10 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 		noticeHandler := handler.NewNoticeHandler(db)
 		notices := api.Group("/notices")
 		{
-			notices.GET("", noticeHandler.GetNotice)
-			notices.PUT("", noticeHandler.UpdateNotice)
+			notices.GET("", noticeHandler.ListNotices)
+			notices.POST("", noticeHandler.CreateNotice)
+			notices.PUT("/:id", noticeHandler.UpdateNotice)
+			notices.DELETE("/:id", noticeHandler.DeleteNotice)
 		}
 
 		logHandler := handler.NewOperationLogHandler(db)

@@ -62,7 +62,11 @@
         </div>
       </el-header>
       <el-main :class="isPublic ? 'shell-public' : 'shell-main'">
-        <router-view />
+        <router-view v-slot="{ Component }">
+          <keep-alive :include="['SSHTerminal']">
+            <component :is="Component" />
+          </keep-alive>
+        </router-view>
       </el-main>
     </el-container>
   </el-container>
