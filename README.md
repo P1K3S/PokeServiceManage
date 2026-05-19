@@ -12,7 +12,7 @@
 | 其他服务记录 | 非 Docker 部署的服务记录与管理 |
 | 出站方式管理 | 公网/内网地址映射，防火墙规则同步，本机直连/出站服务两种模式，批量操作，健康检查（公网 IP + 并发超时） |
 | 内网穿透配置 | 根据出站方式自动生成 frpc.toml 配置文件，隧道名称管理，FRP 配置自动发现 |
-| SSH 终端 | 浏览器内直接 SSH 连接主机终端 |
+| SSH 终端 | 浏览器内直接 SSH 连接主机终端，支持 SFTP 文件管理（上传/下载/编辑/重命名/删除） |
 | 操作日志 | 记录系统关键操作，便于审计和回溯 |
 | 通知公告 | 仪表盘页通知卡片，管理员可编辑，所有用户可查看 |
 | 配置导入导出 | 系统配置 JSON 导出/导入，方便迁移和备份 |
@@ -215,7 +215,9 @@ PokeServiceManage/
 │   │   ├── docker_service.go
 │   │   ├── other_service.go
 │   │   ├── egress_method.go # 出站方式 + 防火墙同步 + frpc 生成 + 健康检查
+│   │   ├── egress_sync.go   # 出站方式同步
 │   │   ├── ssh_terminal.go  # SSH 终端 WebSocket
+│   │   ├── sftp_handler.go  # SFTP 文件管理
 │   │   ├── operation_log.go # 操作日志
 │   │   ├── config_handler.go # 配置导入导出
 │   │   ├── notice.go        # 通知公告
@@ -232,7 +234,7 @@ PokeServiceManage/
 │   │   └── operation_log.go
 │   ├── router/              # 路由注册
 │   ├── utils/               # 工具包
-│   │   ├── jwt/             # JWT 生成与解析
+│   │   ├── jwt.go           # JWT 生成与解析
 │   │   ├── ssh/             # SSH 连接与命令执行
 │   │   └── frp/             # FRP 配置自动发现（Docker inspect + 配置解析）
 │   ├── logger/              # 日志初始化
@@ -241,10 +243,18 @@ PokeServiceManage/
 ├── web/                     # Vue 3 前端
 │   ├── src/
 │   │   ├── api/             # Axios 请求封装
+│   │   │   ├── sftp.js      # SFTP 文件管理接口
+│   │   │   └── operationLog.js # 操作日志接口
+│   │   ├── assets/          # 静态资源
+│   │   ├── components/      # 公共组件
+│   │   │   └── FileManager.vue # SFTP 文件管理器
 │   │   ├── router/          # 路由定义
 │   │   ├── stores/          # Pinia 状态管理
-│   │   ├── views/           # 页面组件
 │   │   ├── styles/          # 全局样式
+│   │   │   └── global.css   # 全局 CSS
+│   │   ├── views/           # 页面组件
+│   │   │   ├── Login.vue    # 登录页
+│   │   │   └── Register.vue # 注册页
 │   │   ├── App.vue          # 根组件（侧边栏+顶栏布局）
 │   │   └── main.js          # 入口
 │   └── vite.config.js       # Vite 配置（含 API 代理 + WebSocket）
@@ -266,6 +276,7 @@ PokeServiceManage/
 | GET/POST/PUT/DELETE | /api/machines | 主机 CRUD |
 | POST | /api/machines/:id/check-ssh | 连通检测 |
 | POST | /api/machines/:id/discover-services | Docker 服务发现 |
+| POST | /api/machines/discover-all-services | 全部主机 Docker 服务发现 |
 | GET | /api/ssh-terminal/:id | SSH 终端（WebSocket） |
 | GET/POST/PUT/DELETE | /api/docker-services | Docker 服务 CRUD |
 | POST | /api/docker-services/:id/check | 服务状态检测 |
@@ -276,8 +287,22 @@ PokeServiceManage/
 | PUT | /api/egress-methods/batch-status | 批量启用/停用 |
 | DELETE | /api/egress-methods/batch | 批量删除 |
 | GET | /api/egress-methods/health-check | 健康检查（公网 IP + 并发超时） |
-| GET | /api/notices | 获取通知 |
-| PUT | /api/notices | 编辑通知（仅管理员） |
+| GET | /api/sftp/:id/list | 文件列表 |
+| GET | /api/sftp/:id/download | 文件下载 |
+| GET | /api/sftp/:id/download-dir | 目录下载 |
+| POST | /api/sftp/:id/upload | 文件上传 |
+| POST | /api/sftp/:id/mkdir | 创建目录 |
+| DELETE | /api/sftp/:id/remove | 删除文件/目录 |
+| PUT | /api/sftp/:id/rename | 重命名 |
+| GET | /api/sftp/:id/read | 读取文件 |
+| POST | /api/sftp/:id/write | 写入文件 |
+| GET | /api/sftp/:id/stat | 文件信息 |
+| GET | /api/notices | 获取公告列表 |
+| POST | /api/notices | 创建公告（仅管理员） |
+| PUT | /api/notices/:id | 编辑公告（仅管理员） |
+| DELETE | /api/notices/:id | 删除公告（仅管理员） |
+| PUT | /api/notices/:id/pin | 置顶/取消置顶 |
+| PUT | /api/notices/:id/move/:direction | 调整公告顺序 |
 | GET | /api/operation-logs | 操作日志列表 |
 | GET | /api/config/export | 导出配置 |
 | POST | /api/config/import | 导入配置 |

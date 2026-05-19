@@ -37,11 +37,14 @@ server/
 │   ├── notice.go             # 公告模型
 │   └── operation_log.go      # 操作日志模型
 ├── handler/
+│   ├── auth.go               # 认证（登录/注册/用户信息）
 │   ├── machine.go            # 主机相关API处理器（含级联更新逻辑）
 │   ├── docker_service.go     # Docker服务相关API处理器
 │   ├── other_service.go      # 其他服务相关API处理器
 │   ├── egress_method.go      # 出站方式相关API处理器
+│   ├── egress_sync.go        # 出站方式级联同步逻辑（IP/端口/名称变更同步）
 │   ├── ssh_terminal.go       # SSH终端WebSocket处理器
+│   ├── sftp_handler.go       # SFTP文件管理处理器（列表/上传/下载/编辑/重命名/删除）
 │   ├── operation_log.go      # 操作日志API处理器
 │   ├── config_handler.go     # 配置相关API处理器
 │   ├── notice.go             # 公告API处理器
@@ -53,6 +56,7 @@ server/
 │   ├── cors.go               # 跨域中间件
 │   └── auth.go               # JWT认证中间件
 ├── utils/
+│   ├── jwt.go                # JWT 生成与解析
 │   ├── ssh/
 │   │   └── ssh.go            # SSH连接工具包（统一连接逻辑）
 │   └── frp/
@@ -485,10 +489,11 @@ func cleanupDatabase(db *gorm.DB) {
 - 隧道名称格式通常包含主机名/服务名，当主机名或服务名变更时，相关隧道名称自动更新
 
 ```go
-func (h *MachineHandler) syncEgressMethodIP(machineID uint, oldIP, newIP string)
-func (h *MachineHandler) syncEgressMethodProxyName(machineID uint, oldName, newName string)
-func (h *DockerServiceHandler) syncEgressMethodDockerSourceIP(serviceID uint, oldIP, newIP string)
+func syncEgressInternalIP(db *gorm.DB, serviceID uint, serviceType string, oldIP, newIP string)
+func syncEgressPort(db *gorm.DB, serviceID uint, serviceType string, oldPort, newPort int)
 ```
+
+> 级联同步逻辑已抽取到独立的 `egress_sync.go` 文件中，由各 handler 调用。
 
 ### 9. 健康检测
 
@@ -557,6 +562,34 @@ func AuthMiddleware() gin.HandlerFunc
 db.Preload("Machine").Preload("DockerService").Find(&egressMethods)
 ```
 
+### 14. SFTP 文件管理（handler/sftp_handler.go）
+
+基于 SSH 连接的 SFTP 文件管理功能，支持远程主机的文件浏览和操作：
+
+```go
+type SFTPHandler struct {
+    DB *gorm.DB
+}
+
+func NewSFTPHandler(db *gorm.DB) *SFTPHandler
+func (h *SFTPHandler) List(c *gin.Context)          // 列出目录内容
+func (h *SFTPHandler) Download(c *gin.Context)       // 下载文件
+func (h *SFTPHandler) DownloadDir(c *gin.Context)    // 下载目录（ZIP压缩）
+func (h *SFTPHandler) Upload(c *gin.Context)         // 上传文件
+func (h *SFTPHandler) Mkdir(c *gin.Context)          // 创建目录
+func (h *SFTPHandler) Remove(c *gin.Context)         // 删除文件/目录
+func (h *SFTPHandler) Rename(c *gin.Context)         // 重命名
+func (h *SFTPHandler) ReadFile(c *gin.Context)       // 读取文件内容
+func (h *SFTPHandler) WriteFile(c *gin.Context)      // 写入文件内容
+func (h *SFTPHandler) Stat(c *gin.Context)           // 获取文件信息
+```
+
+- 通过 SSH 建立 SFTP 会话，使用 `pkg/sftp` 库实现文件操作
+- 目录下载时自动打包为 ZIP 文件
+- 文件上传支持多文件并发
+- 文件读取限制大小（超过 2MB 的文件不允许在线编辑）
+- 所有操作基于主机权限，通过 `userScope` 确保用户只能操作自己的主机
+
 ---
 
 ## 启动方式
@@ -606,3 +639,5 @@ server.exe    # Windows
 | 操作日志 | ✅ | 关键操作自动记录，支持查询审计 |
 | 种子数据 | ✅ | 首次启动自动创建管理员用户和系统公告 |
 | N+1查询优化 | ✅ | 使用Preload和批量查询避免N+1问题 |
+| SFTP文件管理 | ✅ | 基于SSH的SFTP文件浏览、上传下载、目录压缩下载、新建文件夹、重命名、删除、文本文件编辑 |
+| 级联同步抽取 | ✅ | 出站方式级联同步逻辑抽取到独立的 egress_sync.go |

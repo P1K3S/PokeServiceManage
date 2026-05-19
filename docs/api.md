@@ -945,13 +945,13 @@ POST /config/import
 
 ## 八、公告接口
 
-### 8.1 获取公告
+### 8.1 获取公告列表
 
 ```
 GET /notices
 ```
 
-获取当前系统公告内容。
+获取所有公告列表，按排序和置顶状态排列。
 
 **响应示例：**
 
@@ -959,19 +959,26 @@ GET /notices
 {
   "code": 0,
   "message": "success",
-  "data": {
-    "content": "系统将于本周六凌晨2:00-6:00进行维护升级",
-    "updatedAt": "2026-05-13T10:00:00+08:00"
-  }
+  "data": [
+    {
+      "id": 1,
+      "title": "系统公告",
+      "content": "欢迎使用服务管理系统",
+      "pinned": true,
+      "sortOrder": 0,
+      "createdAt": "2026-05-13T10:00:00+08:00",
+      "updatedAt": "2026-05-13T10:00:00+08:00"
+    }
+  ]
 }
 ```
 
 ---
 
-### 8.2 更新公告
+### 8.2 创建公告
 
 ```
-PUT /notices
+POST /notices
 ```
 
 > **权限要求**：仅管理员可调用。
@@ -980,23 +987,68 @@ PUT /notices
 
 ```json
 {
+  "title": "维护通知",
   "content": "系统将于本周六凌晨2:00-6:00进行维护升级"
 }
 ```
 
-| 字段 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| content | string | 是 | 公告内容 |
+---
 
-**响应示例：**
+### 8.3 编辑公告
+
+```
+PUT /notices/:id
+```
+
+> **权限要求**：仅管理员可调用。
+
+**请求体：**
 
 ```json
 {
-  "code": 0,
-  "message": "公告更新成功",
-  "data": null
+  "title": "维护通知（更新）",
+  "content": "维护时间调整为周六凌晨3:00-5:00"
 }
 ```
+
+---
+
+### 8.4 删除公告
+
+```
+DELETE /notices/:id
+```
+
+> **权限要求**：仅管理员可调用。
+
+---
+
+### 8.5 置顶/取消置顶
+
+```
+PUT /notices/:id/pin
+```
+
+> **权限要求**：仅管理员可调用。
+
+切换公告的置顶状态。
+
+---
+
+### 8.6 调整公告顺序
+
+```
+PUT /notices/:id/move/:direction
+```
+
+> **权限要求**：仅管理员可调用。
+
+**Path 参数：**
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| id | int | 公告ID |
+| direction | string | 移动方向：up / down |
 
 ---
 
@@ -1043,6 +1095,273 @@ PUT /notices
 
 ---
 
+## 十、SFTP 文件管理接口
+
+所有 SFTP 接口通过 SSH 连接到远程主机执行文件操作，需要主机已配置 SSH 连接信息。
+
+### 10.1 列出目录内容
+
+```
+GET /sftp/:id/list
+```
+
+**Path 参数：**
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| id | int | 主机ID |
+
+**Query 参数：**
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| path | string | 是 | 目录路径，默认 / |
+
+**响应示例：**
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "path": "/home",
+    "files": [
+      {
+        "name": "config.yaml",
+        "path": "/home/config.yaml",
+        "isDir": false,
+        "size": 1024,
+        "modTime": "2026-05-13T10:00:00Z"
+      },
+      {
+        "name": "logs",
+        "path": "/home/logs",
+        "isDir": true,
+        "size": 4096,
+        "modTime": "2026-05-13T10:00:00Z"
+      }
+    ]
+  }
+}
+```
+
+---
+
+### 10.2 下载文件
+
+```
+GET /sftp/:id/download
+```
+
+**Path 参数：**
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| id | int | 主机ID |
+
+**Query 参数：**
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| path | string | 是 | 文件路径 |
+| token | string | 是 | JWT Token（通过 URL 参数传递） |
+
+**响应：** 文件流（Content-Disposition: attachment）
+
+---
+
+### 10.3 下载目录（ZIP压缩）
+
+```
+GET /sftp/:id/download-dir
+```
+
+**Path 参数：**
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| id | int | 主机ID |
+
+**Query 参数：**
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| path | string | 是 | 目录路径 |
+| token | string | 是 | JWT Token（通过 URL 参数传递） |
+
+**响应：** ZIP 文件流
+
+---
+
+### 10.4 上传文件
+
+```
+POST /sftp/:id/upload
+```
+
+**Path 参数：**
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| id | int | 主机ID |
+
+**Query 参数：**
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| path | string | 是 | 目标目录路径 |
+
+**请求格式：** `multipart/form-data`
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| file | file | 是 | 上传的文件（支持多文件） |
+
+---
+
+### 10.5 创建目录
+
+```
+POST /sftp/:id/mkdir
+```
+
+**请求体：**
+
+```json
+{
+  "path": "/home/new-folder"
+}
+```
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| path | string | 是 | 新目录的完整路径 |
+
+---
+
+### 10.6 删除文件/目录
+
+```
+DELETE /sftp/:id/remove
+```
+
+**请求体：**
+
+```json
+{
+  "path": "/home/config.yaml",
+  "isDir": false
+}
+```
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| path | string | 是 | 文件/目录路径 |
+| isDir | bool | 是 | 是否为目录 |
+
+---
+
+### 10.7 重命名
+
+```
+PUT /sftp/:id/rename
+```
+
+**请求体：**
+
+```json
+{
+  "oldPath": "/home/old-name",
+  "newPath": "/home/new-name"
+}
+```
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| oldPath | string | 是 | 原路径 |
+| newPath | string | 是 | 新路径 |
+
+---
+
+### 10.8 读取文件内容
+
+```
+GET /sftp/:id/read
+```
+
+**Query 参数：**
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| path | string | 是 | 文件路径 |
+
+**响应示例：**
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "content": "server:\n  port: 8080\n"
+  }
+}
+```
+
+> **注意**：超过 2MB 的文件不允许在线读取。
+
+---
+
+### 10.9 写入文件内容
+
+```
+POST /sftp/:id/write
+```
+
+**请求体：**
+
+```json
+{
+  "path": "/home/config.yaml",
+  "content": "server:\n  port: 8080\n"
+}
+```
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| path | string | 是 | 文件路径 |
+| content | string | 是 | 文件内容 |
+
+---
+
+### 10.10 获取文件信息
+
+```
+GET /sftp/:id/stat
+```
+
+**Query 参数：**
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| path | string | 是 | 文件路径 |
+
+**响应示例：**
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "name": "config.yaml",
+    "size": 1024,
+    "isDir": false,
+    "modTime": "2026-05-13T10:00:00Z"
+  }
+}
+```
+
+---
+
 ## 接口列表汇总
 
 | HTTP方法 | 路径 | 说明 |
@@ -1078,5 +1397,19 @@ PUT /notices
 | GET | /operation-logs | 获取操作日志列表 |
 | GET | /config/export | 导出配置 |
 | POST | /config/import | 导入配置 |
-| GET | /notices | 获取公告 |
-| PUT | /notices | 更新公告（管理员） |
+| GET | /notices | 获取公告列表 |
+| POST | /notices | 创建公告（管理员） |
+| PUT | /notices/:id | 编辑公告（管理员） |
+| DELETE | /notices/:id | 删除公告（管理员） |
+| PUT | /notices/:id/pin | 置顶/取消置顶 |
+| PUT | /notices/:id/move/:direction | 调整公告顺序 |
+| GET | /sftp/:id/list | 列出目录内容 |
+| GET | /sftp/:id/download | 下载文件 |
+| GET | /sftp/:id/download-dir | 下载目录（ZIP） |
+| POST | /sftp/:id/upload | 上传文件 |
+| POST | /sftp/:id/mkdir | 创建目录 |
+| DELETE | /sftp/:id/remove | 删除文件/目录 |
+| PUT | /sftp/:id/rename | 重命名 |
+| GET | /sftp/:id/read | 读取文件内容 |
+| POST | /sftp/:id/write | 写入文件内容 |
+| GET | /sftp/:id/stat | 获取文件信息 |

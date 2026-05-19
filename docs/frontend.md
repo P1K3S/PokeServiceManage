@@ -32,12 +32,20 @@ web/
 │   │   ├── otherService.js      # 其他服务相关 API
 │   │   ├── egress.js            # 出站方式相关 API
 │   │   ├── notice.js            # 公告相关 API
-│   │   └── config.js            # 配置相关 API（frpc等）
+│   │   ├── operationLog.js      # 操作日志相关 API
+│   │   ├── config.js            # 配置相关 API（frpc等）
+│   │   └── sftp.js              # SFTP 文件管理 API
+│   ├── components/              # 公共组件
+│   │   └── FileManager.vue      # SFTP 文件管理器组件
 │   ├── stores/                  # Pinia 状态管理
 │   │   └── auth.js              # 认证状态（token, role, isAdmin）
 │   ├── router/
 │   │   └── index.js             # 路由配置
+│   ├── styles/
+│   │   └── global.css           # 全局样式
 │   └── views/
+│       ├── Login.vue            # 登录
+│       ├── Register.vue         # 注册
 │       ├── Dashboard.vue        # 仪表盘
 │       ├── MachineList.vue      # 主机管理
 │       ├── ServiceList.vue      # Docker服务管理
@@ -55,6 +63,18 @@ web/
 ```javascript
 const routes = [
   {
+    path: '/login',
+    name: 'Login',
+    component: () => import('../views/Login.vue'),
+    meta: { title: '登录', public: true }
+  },
+  {
+    path: '/register',
+    name: 'Register',
+    component: () => import('../views/Register.vue'),
+    meta: { title: '注册', public: true }
+  },
+  {
     path: '/',
     redirect: '/dashboard'
   },
@@ -71,7 +91,7 @@ const routes = [
     meta: { title: '主机管理' }
   },
   {
-    path: '/docker-services',
+    path: '/services',
     name: 'ServiceList',
     component: () => import('@/views/ServiceList.vue'),
     meta: { title: 'Docker服务管理' }
@@ -107,6 +127,24 @@ const routes = [
     meta: { title: '操作日志' }
   }
 ]
+
+const router = createRouter({
+  history: createWebHistory(),
+  routes
+})
+
+router.beforeEach((to, from, next) => {
+  if (to.meta.public) {
+    next()
+    return
+  }
+  const token = localStorage.getItem('token')
+  if (!token) {
+    next('/login')
+  } else {
+    next()
+  }
+})
 ```
 
 ### 侧边栏菜单顺序
@@ -220,15 +258,37 @@ export const syncEgressFirewall = (id) => request.post(`/egress-methods/${id}/sy
 export const batchSyncEgressFirewall = (ids) => request.post('/egress-methods/batch-sync-firewall', { ids })
 
 // src/api/notice.js
-export const getNotice = () => request.get('/notice')
-export const updateNotice = (data) => request.put('/notice', data)
+export const getNotices = () => request.get('/notices')
+export const createNotice = (data) => request.post('/notices', data)
+export const updateNotice = (id, data) => request.put(`/notices/${id}`, data)
+export const deleteNotice = (id) => request.delete(`/notices/${id}`)
+export const togglePinNotice = (id) => request.put(`/notices/${id}/pin`)
+export const moveNotice = (id, direction) => request.put(`/notices/${id}/move/${direction}`)
+
+// src/api/operationLog.js
+export const getOperationLogs = (params) => request.get('/operation-logs', { params })
 
 // src/api/config.js
-export const generateFrpcConfig = (data) => request.post('/config/frpc', data)
-export const getEgressServicesForConfig = (params) => request.get('/config/egress-services', { params })
+export const exportConfig = () => request.get('/config/export')
+export const importConfig = (data) => request.post('/config/import', data)
 
-// src/api/log.js
-export const getOperationLogs = (params) => request.get('/operation-logs', { params })
+// src/api/sftp.js
+export const sftpList = (machineId, path) => request.get(`/sftp/${machineId}/list`, { params: { path } })
+export const sftpDownload = (machineId, path) => `/api/sftp/${machineId}/download?path=${encodeURIComponent(path)}&token=${encodeURIComponent(localStorage.getItem('token'))}`
+export const sftpDownloadDir = (machineId, path) => `/api/sftp/${machineId}/download-dir?path=${encodeURIComponent(path)}&token=${encodeURIComponent(localStorage.getItem('token'))}`
+export const sftpUpload = (machineId, path, file) => {
+  const formData = new FormData()
+  formData.append('file', file)
+  return request.post(`/sftp/${machineId}/upload?path=${encodeURIComponent(path)}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+}
+export const sftpMkdir = (machineId, path) => request.post(`/sftp/${machineId}/mkdir`, { path })
+export const sftpRemove = (machineId, path, isDir) => request.delete(`/sftp/${machineId}/remove`, { data: { path, isDir } })
+export const sftpRename = (machineId, oldPath, newPath) => request.put(`/sftp/${machineId}/rename`, { oldPath, newPath })
+export const sftpReadFile = (machineId, path) => request.get(`/sftp/${machineId}/read`, { params: { path } })
+export const sftpWriteFile = (machineId, path, content) => request.post(`/sftp/${machineId}/write`, { path, content })
+export const sftpStat = (machineId, path) => request.get(`/sftp/${machineId}/stat`, { params: { path } })
 ```
 
 ---
@@ -329,12 +389,25 @@ export const getOperationLogs = (params) => request.get('/operation-logs', { par
 
 ### SSH终端 SSHTerminal.vue
 
-- **页面功能**：通过 WebSocket 连接到远程主机的 SSH 终端
-- **主机选择器**：顶部下拉选择目标主机，选择后自动建立连接
+- **页面功能**：通过 WebSocket 连接到远程主机的 SSH 终端，并集成 SFTP 文件管理功能
+- **主机选择器**：顶部下拉选择目标主机（仅显示已启用 SSH 的主机）
 - **终端模拟器**：基于 xterm.js 实现，支持完整的终端交互
 - **WebSocket 连接**：通过 `ws://` 协议连接后端 WebSocket 端点，实时双向通信
 - **连接状态指示**：显示当前连接状态（已连接/已断开/连接中）
-- **自动重连**：连接断开后支持手动重连
+- **文件管理器**：点击"文件管理"按钮打开右侧文件管理面板，通过独立的 FileManager 组件实现
+
+### 文件管理器 FileManager.vue
+
+独立的 SFTP 文件管理组件，从 SSHTerminal.vue 中拆分而来，遵循单一职责原则。
+
+- **组件通信**：通过 `machineId` prop 接收主机上下文，通过 `watch(machineId)` 自动响应主机切换
+- **文件浏览**：面包屑导航、目录列表、双击进入目录
+- **文件操作**：上传（多文件）、下载、目录压缩下载、新建文件夹、重命名、删除
+- **文件编辑**：双击文本文件打开编辑器，支持保存
+- **右键菜单**：根据文件类型动态显示操作项（打开/下载/编辑/重命名/删除）
+- **文件图标**：根据文件扩展名显示对应图标
+- **暴露方法**：`refreshFiles`、`loadFiles`（通过 defineExpose）
+- **事件通知**：`path-changed`（路径变化时触发）
 
 ### 操作日志 OperationLogList.vue
 
@@ -438,6 +511,8 @@ export default defineConfig({
 | 复制地址 | ✅ | 支持HTTP/HTTPS协议格式，兼容非HTTPS环境 |
 | 内网穿透配置 | ✅ | 出站服务选择器、主机过滤、配置生成、复制到剪贴板 |
 | SSH终端 | ✅ | xterm.js终端、WebSocket连接、主机选择器、自动重连 |
+| SFTP文件管理 | ✅ | 文件浏览、上传下载、新建文件夹、重命名、删除、文本文件编辑 |
+| 组件拆分 | ✅ | FileManager 独立组件，遵循单一职责原则，通过 Props/Events 通信 |
 | 操作日志 | ✅ | 分页日志表格、操作类型标签（颜色区分） |
 | Pinia状态管理 | ✅ | auth store管理token、role、isAdmin |
 | 弹窗抖动修复 | ✅ | 全局滚动条固定 |
