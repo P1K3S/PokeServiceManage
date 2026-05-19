@@ -457,7 +457,7 @@ type firewallResult struct {
 	SkippedPorts []int  `json:"skippedPorts"`
 }
 
-var ufwNumberedRuleRegex = regexp.MustCompile(`^\s*\[\s*(\d+)\s+\]\s+(\S+)\s+(ALLOW|DENY)\s+IN`)
+var ufwNumberedRuleRegex = regexp.MustCompile(`^\s*\[\s*(\d+)\s+\]\s+(\S+)\s+(ALLOW|DENY)\s+IN.*`)
 
 func parsePortsFromSpec(spec string) []int {
 	spec = strings.TrimSuffix(spec, "/tcp")
