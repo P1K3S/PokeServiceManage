@@ -457,7 +457,7 @@ type firewallResult struct {
 	SkippedPorts []int  `json:"skippedPorts"`
 }
 
-var ufwNumberedRuleRegex = regexp.MustCompile(`\[\s*(\d+)\s+\]\s+(\S+)\s+(ALLOW|DENY)\s+IN`)
+var ufwNumberedRuleRegex = regexp.MustCompile(`^\s*\[\s*(\d+)\s+\]\s+(\S+)\s+(ALLOW|DENY)\s+IN`)
 
 func parsePortsFromSpec(spec string) []int {
 	spec = strings.TrimSuffix(spec, "/tcp")
@@ -631,11 +631,6 @@ func (h *EgressMethodHandler) syncFirewallForMachines(machineIDs []uint) []firew
 			continue
 		}
 
-
-		logger.Log.Sugar().Infof("[FirewallSync] machine=%s, ufw status numbered原始输出:", machine.Name)
-		for i, line := range strings.Split(statusOutput, "\n") {
-			logger.Log.Sugar().Infof("[FirewallSync]   line[%d]: '%s'", i, line)
-		}
 
 		var rules []ufwRule
 		for _, line := range strings.Split(statusOutput, "\n") {
