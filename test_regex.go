@@ -3,40 +3,45 @@ package main
 import (
 	"fmt"
 	"regexp"
+	"strings"
 )
 
 func main() {
-	// 更宽松的正则表达式测试
-	testCases := []string{
-		`.*\[.*(\d+).*\].*\b(\S+).*\b(ALLOW|DENY)\b.*`,  // 非常宽松的匹配
-	}
+	output := `Status: active
 
-	// 模拟 ufw status numbered 输出的一行
-	testLine := "[ 1] 22/tcp                     ALLOW IN    Anywhere                  "
+     To                         Action      From
+     --                         ------      ----
+[ 1] 22/tcp                     ALLOW IN    Anywhere                  
+[ 2] 62500:62501/tcp            ALLOW IN    Anywhere                  
+[ 3] 9301/tcp                   ALLOW IN    Anywhere                  
+[ 4] 9602/tcp                   ALLOW IN    Anywhere                  
+[ 5] 9102/tcp                   ALLOW IN    Anywhere                  
+[ 6] 9297/tcp                   ALLOW IN    Anywhere                  
+[ 7] 9601/tcp                   ALLOW IN    Anywhere                  
+[ 8] 9202/tcp                   ALLOW IN    Anywhere                  
+[ 9] 9702/tcp                   ALLOW IN    Anywhere                  
+[10] 9711/tcp                   ALLOW IN    Anywhere                  
+[11] 9712/tcp                   ALLOW IN    Anywhere                  
+[12] 9295/tcp                   ALLOW IN    Anywhere                  
+[13] 9294/tcp                   ALLOW IN    Anywhere                  
+[14] 9201/tcp                   DENY IN     Anywhere                  
+[15] 9299/tcp                   DENY IN     Anywhere                  
+[16] 9302/tcp                   DENY IN     Anywhere                  
+[17] 9703/tcp                   ALLOW IN    Anywhere                  
+[18] 9232/tcp                   ALLOW IN    Anywhere                  
+[19] 9999/tcp                   ALLOW IN    Anywhere                  
+`
 
-	for i, regexStr := range testCases {
-		regex := regexp.MustCompile(regexStr)
-		matches := regex.FindStringSubmatch(testLine)
-		fmt.Printf("测试正则[%d]: %s\n", i, regexStr)
-		fmt.Printf("  测试行: '%s'\n", testLine)
-		if len(matches) > 0 {
-			fmt.Printf("  匹配成功，分组: %v\n", matches)
-		} else {
-			fmt.Printf("  匹配失败\n")
+	regex := regexp.MustCompile(`\[\s*(\d+)\s*\]\s+(\S+)\s+(ALLOW|DENY)`)
+
+	lines := strings.Split(output, "\n")
+	matched := 0
+	for i, line := range lines {
+		matches := regex.FindStringSubmatch(line)
+		if len(matches) == 4 {
+			fmt.Printf("行[%d]: num=%s, portSpec=%s, action=%s\n", i, matches[1], matches[2], matches[3])
+			matched++
 		}
-		fmt.Println()
 	}
-
-	// 直接匹配行中的数字和端口
-	numRegex := regexp.MustCompile(`\[(\s*\d+\s*)\]`)
-	numMatches := numRegex.FindStringSubmatch(testLine)
-	fmt.Printf("单独匹配编号: %v\n", numMatches)
-
-	portRegex := regexp.MustCompile(`\b(\S+)/tcp`)
-	portMatches := portRegex.FindStringSubmatch(testLine)
-	fmt.Printf("单独匹配端口: %v\n", portMatches)
-
-	actionRegex := regexp.MustCompile(`\b(ALLOW|DENY)\b`)
-	actionMatches := actionRegex.FindStringSubmatch(testLine)
-	fmt.Printf("单独匹配动作: %v\n", actionMatches)
+	fmt.Printf("\n共匹配 %d 条规则\n", matched)
 }
