@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"service-manage/config"
+	"service-manage/logger"
 	"service-manage/model"
 	frputil "service-manage/utils/frp"
 	sshutil "service-manage/utils/ssh"
@@ -285,6 +286,8 @@ func (h *EgressMethodHandler) Update(c *gin.Context) {
 
 	updates = convertKeys(updates)
 
+	logger.Log.Sugar().Infof("[EgressMethod.Update] id=%d, oldPublicPort=%d, oldMachineID=%d, updates=%v", id, oldPublicPort, oldMachineID, updates)
+
 	newIP, ipOk := updates["public_ip"].(string)
 	newPort, portOk := updates["public_port"]
 	if !ipOk {
@@ -308,6 +311,8 @@ func (h *EgressMethodHandler) Update(c *gin.Context) {
 	if finalPort == 0 {
 		finalPort = method.PublicPort
 	}
+
+	logger.Log.Sugar().Infof("[EgressMethod.Update] id=%d, finalIP=%s, finalPort=%d, portOk=%v", id, finalIP, finalPort, portOk)
 
 	var dup model.EgressMethod
 	if err := h.DB.Where("public_ip = ? AND public_port = ? AND id != ?", finalIP, finalPort, method.ID).First(&dup).Error; err == nil {
@@ -335,6 +340,8 @@ func (h *EgressMethodHandler) Update(c *gin.Context) {
 	if oldMachineID != newMachineID {
 		needSync = true
 	}
+
+	logger.Log.Sugar().Infof("[EgressMethod.Update] id=%d, oldPublicPort=%d, newPublicPort=%d, oldMachineID=%d, newMachineID=%d, needSync=%v", id, oldPublicPort, newPublicPort, oldMachineID, newMachineID, needSync)
 
 	if needSync {
 		syncSet := make(map[uint]bool)
@@ -548,6 +555,12 @@ func (h *EgressMethodHandler) syncFirewallForMachines(machineIDs []uint) []firew
 	var allMethods []model.EgressMethod
 	h.DB.Find(&allMethods)
 
+	logger.Log.Sugar().Infof("[FirewallSync] 开始同步, machineIDs=%v, allMethods总数=%d", machineIDs, len(allMethods))
+	for i, m := range allMethods {
+		mid := h.resolveMachineID(m)
+		logger.Log.Sugar().Infof("[FirewallSync] allMethods[%d]: id=%d, publicPort=%d, status=%d, machineID=%d, isDirect=%v, egressServiceID=%d", i, m.ID, m.PublicPort, m.Status, mid, m.IsDirect, m.EgressServiceID)
+	}
+
 	type machineAction struct {
 		machine    model.Machine
 		allowPorts map[int]bool
@@ -576,6 +589,15 @@ func (h *EgressMethodHandler) syncFirewallForMachines(machineIDs []uint) []firew
 			continue
 		}
 		addPortsToMap(globalAllowMap, machineID, m.PublicPort)
+	}
+
+	for mid, ports := range globalAllowMap {
+		var portList []int
+		for p := range ports {
+			portList = append(portList, p)
+		}
+		sort.Ints(portList)
+		logger.Log.Sugar().Infof("[FirewallSync] globalAllowMap[machineID=%d]: %v", mid, portList)
 	}
 
 	for _, mid := range machineIDs {
@@ -618,6 +640,19 @@ func (h *EgressMethodHandler) syncFirewallForMachines(machineIDs []uint) []firew
 				ma.denyPorts[m.PublicPort] = true
 			}
 		}
+	}
+
+	for mid, ma := range machineMap {
+		var allowList, denyList []int
+		for p := range ma.allowPorts {
+			allowList = append(allowList, p)
+		}
+		for p := range ma.denyPorts {
+			denyList = append(denyList, p)
+		}
+		sort.Ints(allowList)
+		sort.Ints(denyList)
+		logger.Log.Sugar().Infof("[FirewallSync] machineID=%d(%s), allowPorts=%v, denyPorts=%v", mid, ma.machine.Name, allowList, denyList)
 	}
 
 	var results []firewallResult
@@ -683,6 +718,13 @@ func (h *EgressMethodHandler) syncFirewallForMachines(machineIDs []uint) []firew
 			globalPorts = make(map[int]bool)
 		}
 
+		var globalPortList []int
+		for p := range globalPorts {
+			globalPortList = append(globalPortList, p)
+		}
+		sort.Ints(globalPortList)
+		logger.Log.Sugar().Infof("[FirewallSync] machine=%s(%s), globalPorts=%v", machine.Name, machine.IP, globalPortList)
+
 		for _, rule := range rules {
 			ports := parsePortsFromSpec(rule.portSpec)
 			if len(ports) == 0 {
@@ -697,6 +739,7 @@ func (h *EgressMethodHandler) syncFirewallForMachines(machineIDs []uint) []firew
 				}
 			}
 			if allProtected {
+				logger.Log.Sugar().Infof("[FirewallSync] machine=%s, 规则[%d] %s %s -> 跳过(受保护端口)", machine.Name, rule.num, rule.portSpec, rule.action)
 				continue
 			}
 
@@ -713,6 +756,7 @@ func (h *EgressMethodHandler) syncFirewallForMachines(machineIDs []uint) []firew
 					skippedPorts = append(skippedPorts, p)
 				}
 				skipCount++
+				logger.Log.Sugar().Infof("[FirewallSync] machine=%s, 规则[%d] %s %s -> 跳过(全局ALLOW已存在)", machine.Name, rule.num, rule.portSpec, rule.action)
 				continue
 			}
 
@@ -729,9 +773,11 @@ func (h *EgressMethodHandler) syncFirewallForMachines(machineIDs []uint) []firew
 					skippedPorts = append(skippedPorts, p)
 				}
 				skipCount++
+				logger.Log.Sugar().Infof("[FirewallSync] machine=%s, 规则[%d] %s %s -> 跳过(DENY匹配)", machine.Name, rule.num, rule.portSpec, rule.action)
 				continue
 			}
 
+			logger.Log.Sugar().Infof("[FirewallSync] machine=%s, 规则[%d] %s %s -> 删除(allGlobal=%v, allMyDeny=%v)", machine.Name, rule.num, rule.portSpec, rule.action, allGlobal, allMyDeny)
 			deleteCmds = append(deleteCmds, fmt.Sprintf("ufw --force delete %d", rule.num))
 			deleteCount++
 		}
@@ -748,6 +794,8 @@ func (h *EgressMethodHandler) syncFirewallForMachines(machineIDs []uint) []firew
 				cmds = append(cmds, fmt.Sprintf("ufw deny %d/tcp", p))
 			}
 		}
+
+		logger.Log.Sugar().Infof("[FirewallSync] machine=%s, 待执行命令: %v", machine.Name, cmds)
 
 		if len(cmds) > 0 {
 			batchCmd := strings.Join(cmds, "; ")
