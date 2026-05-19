@@ -633,13 +633,17 @@ func (h *EgressMethodHandler) syncFirewallForMachines(machineIDs []uint) []firew
 
 
 		var rules []ufwRule
-		for _, line := range strings.Split(statusOutput, "\n") {
+		for i, line := range strings.Split(statusOutput, "\n") {
 			matches := ufwNumberedRuleRegex.FindStringSubmatch(line)
 			if len(matches) == 4 {
 				n, _ := strconv.Atoi(matches[1])
 				rules = append(rules, ufwRule{num: n, portSpec: matches[2], action: matches[3]})
+				logger.Log.Sugar().Infof("[FirewallSync]   匹配到规则: num=%d, portSpec=%s, action=%s", n, matches[2], matches[3])
+			} else {
+				logger.Log.Sugar().Infof("[FirewallSync]   未匹配行[%d]: '%s'", i, line)
 			}
 		}
+		logger.Log.Sugar().Infof("[FirewallSync]   共解析到 %d 条规则", len(rules))
 
 		sort.Slice(rules, func(i, j int) bool { return rules[i].num > rules[j].num })
 
