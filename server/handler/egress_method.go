@@ -274,6 +274,9 @@ func (h *EgressMethodHandler) Update(c *gin.Context) {
 		return
 	}
 
+	oldMachineID := h.resolveMachineID(method)
+	oldPublicPort := method.PublicPort
+
 	var updates map[string]interface{}
 	if err := c.ShouldBindJSON(&updates); err != nil {
 		jsonError(c, "请求参数错误")
@@ -320,6 +323,36 @@ func (h *EgressMethodHandler) Update(c *gin.Context) {
 	uid, uname := getLogUserInfo(c)
 	logOperation(h.DB, uid, uname, "update", "egress_method", uint(id), method.ProxyName)
 
+	var updatedMethod model.EgressMethod
+	h.DB.First(&updatedMethod, id)
+	newMachineID := h.resolveMachineID(updatedMethod)
+	newPublicPort := updatedMethod.PublicPort
+
+	needSync := false
+	if oldPublicPort != newPublicPort {
+		needSync = true
+	}
+	if oldMachineID != newMachineID {
+		needSync = true
+	}
+
+	if needSync {
+		syncSet := make(map[uint]bool)
+		if oldMachineID > 0 {
+			syncSet[oldMachineID] = true
+		}
+		if newMachineID > 0 {
+			syncSet[newMachineID] = true
+		}
+		var machineIDs []uint
+		for mid := range syncSet {
+			machineIDs = append(machineIDs, mid)
+		}
+		if len(machineIDs) > 0 {
+			go h.syncFirewallForMachines(machineIDs)
+		}
+	}
+
 	jsonSuccess(c, nil)
 }
 
@@ -331,6 +364,8 @@ func (h *EgressMethodHandler) Delete(c *gin.Context) {
 		return
 	}
 
+	machineID := h.resolveMachineID(method)
+
 	if err := h.DB.Delete(&method).Error; err != nil {
 		jsonError(c, "删除出站方式失败")
 		return
@@ -338,6 +373,10 @@ func (h *EgressMethodHandler) Delete(c *gin.Context) {
 
 	uid, uname := getLogUserInfo(c)
 	logOperation(h.DB, uid, uname, "delete", "egress_method", uint(id), method.ProxyName)
+
+	if machineID > 0 {
+		go h.syncFirewallForMachines([]uint{machineID})
+	}
 
 	jsonSuccess(c, nil)
 }
@@ -370,10 +409,33 @@ func (h *EgressMethodHandler) BatchDelete(c *gin.Context) {
 		jsonError(c, "请选择至少一个出站方式")
 		return
 	}
+
+	var methods []model.EgressMethod
+	if err := userScope(c, h.DB).Where("id IN ?", req.IDs).Find(&methods).Error; err != nil {
+		jsonError(c, "查询出站方式失败")
+		return
+	}
+
+	machineIDSet := make(map[uint]bool)
+	for _, m := range methods {
+		if mid := h.resolveMachineID(m); mid > 0 {
+			machineIDSet[mid] = true
+		}
+	}
+
 	if err := userScope(c, h.DB).Where("id IN ?", req.IDs).Delete(&model.EgressMethod{}).Error; err != nil {
 		jsonError(c, "批量删除失败")
 		return
 	}
+
+	var machineIDs []uint
+	for mid := range machineIDSet {
+		machineIDs = append(machineIDs, mid)
+	}
+	if len(machineIDs) > 0 {
+		go h.syncFirewallForMachines(machineIDs)
+	}
+
 	jsonSuccess(c, nil)
 }
 
@@ -463,6 +525,26 @@ func (h *EgressMethodHandler) SyncFirewall(c *gin.Context) {
 		}
 	}
 
+	machineIDSet := make(map[uint]bool)
+	for _, m := range methods {
+		if mid := h.resolveMachineID(m); mid > 0 {
+			machineIDSet[mid] = true
+		}
+	}
+	var machineIDs []uint
+	for mid := range machineIDSet {
+		machineIDs = append(machineIDs, mid)
+	}
+
+	results := h.syncFirewallForMachines(machineIDs)
+
+	jsonSuccess(c, gin.H{
+		"results": results,
+		"total":   len(results),
+	})
+}
+
+func (h *EgressMethodHandler) syncFirewallForMachines(machineIDs []uint) []firewallResult {
 	var allMethods []model.EgressMethod
 	h.DB.Find(&allMethods)
 
@@ -496,7 +578,22 @@ func (h *EgressMethodHandler) SyncFirewall(c *gin.Context) {
 		addPortsToMap(globalAllowMap, machineID, m.PublicPort)
 	}
 
-	for _, m := range methods {
+	for _, mid := range machineIDs {
+		if _, exists := machineMap[mid]; exists {
+			continue
+		}
+		var machine model.Machine
+		if err := h.DB.First(&machine, mid).Error; err != nil {
+			continue
+		}
+		machineMap[mid] = &machineAction{
+			machine:    machine,
+			allowPorts: make(map[int]bool),
+			denyPorts:  make(map[int]bool),
+		}
+	}
+
+	for _, m := range allMethods {
 		if m.PublicPort <= 0 {
 			continue
 		}
@@ -506,26 +603,19 @@ func (h *EgressMethodHandler) SyncFirewall(c *gin.Context) {
 			continue
 		}
 
-		if _, exists := machineMap[machineID]; !exists {
-			var machine model.Machine
-			if err := h.DB.First(&machine, machineID).Error; err != nil {
-				continue
-			}
-			machineMap[machineID] = &machineAction{
-				machine:    machine,
-				allowPorts: make(map[int]bool),
-				denyPorts:  make(map[int]bool),
-			}
+		ma, exists := machineMap[machineID]
+		if !exists {
+			continue
 		}
 
 		if isProtectedPort(m.PublicPort) {
 			continue
 		}
 		if m.Status == 1 {
-			machineMap[machineID].allowPorts[m.PublicPort] = true
+			ma.allowPorts[m.PublicPort] = true
 		} else {
-			if !machineMap[machineID].allowPorts[m.PublicPort] {
-				machineMap[machineID].denyPorts[m.PublicPort] = true
+			if !ma.allowPorts[m.PublicPort] {
+				ma.denyPorts[m.PublicPort] = true
 			}
 		}
 	}
@@ -712,10 +802,7 @@ func (h *EgressMethodHandler) SyncFirewall(c *gin.Context) {
 		})
 	}
 
-	jsonSuccess(c, gin.H{
-		"results": results,
-		"total":   len(results),
-	})
+	return results
 }
 
 func (h *EgressMethodHandler) GenerateFrpc(c *gin.Context) {
